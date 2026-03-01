@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PendingPage from './pages/PendingPage';
@@ -8,9 +9,10 @@ import VendorsPage from './pages/VendorsPage';
 import VendorDetailPage from './pages/VendorDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminVendorForm from './pages/AdminVendorForm';
+import ContactPage from './pages/ContactPage';
 
 function ProtectedRoute({ children, requireApproval = false, adminOnly = false }) {
-    const { isLoggedIn, isApproved, isAdmin, loading, user } = useAuth();
+    const { isLoggedIn, isApproved, isAdmin, loading } = useAuth();
 
     if (loading) return <div className="loading"><div className="spinner"></div></div>;
     if (!isLoggedIn) return <Navigate to="/login" replace />;
@@ -27,9 +29,16 @@ export default function App() {
 
     return (
         <>
+            {/* Show Navbar only when logged in — ContactPage has its own public nav */}
             {isLoggedIn && <Navbar />}
             <Routes>
-                {/* Public */}
+                {/* Home Page — always public */}
+                <Route path="/" element={<HomePage />} />
+
+                {/* Contact — always public */}
+                <Route path="/contact" element={<ContactPage />} />
+
+                {/* Public auth pages */}
                 <Route path="/login" element={
                     isLoggedIn ? (
                         isAdmin ? <Navigate to="/admin" replace /> :
@@ -79,7 +88,7 @@ export default function App() {
 
                 {/* Fallback */}
                 <Route path="*" element={
-                    <Navigate to={isLoggedIn ? (isAdmin ? "/admin" : "/vendors") : "/login"} replace />
+                    <Navigate to={isLoggedIn ? (isAdmin ? "/admin" : "/") : "/"} replace />
                 } />
             </Routes>
         </>
