@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import ContactModal from '../components/ContactModal';
 import api from '../api/client';
 
 const BADGE_ICONS = { Gold: '🏆', Silver: '🥈', Bronze: '🥉', None: '—' };
 
 export default function VendorsPage() {
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
     const [vendors, setVendors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -13,6 +16,8 @@ export default function VendorsPage() {
     const [filters, setFilters] = useState({ country: [], size: [], badge: [] });
     const [activeFilters, setActiveFilters] = useState({ country: [], size: [], badge: [] });
     const [totalCount, setTotalCount] = useState(0);
+    const [ratingSummaries, setRatingSummaries] = useState({});
+    const [contactOpen, setContactOpen] = useState(false);
 
     const fetchVendors = async () => {
         setLoading(true);
@@ -23,10 +28,15 @@ export default function VendorsPage() {
             if (activeFilters.size.length) params.set('size', activeFilters.size.join(','));
             if (activeFilters.badge.length) params.set('badge', activeFilters.badge.join(','));
 
-            const { data } = await api.get(`/vendors?${params.toString()}`);
-            setVendors(data.vendors);
-            setTotalCount(data.total);
-            if (data.filters) setFilters(data.filters);
+            const [vendorRes, summaryRes] = await Promise.all([
+                api.get(`/vendors?${params.toString()}`),
+                api.get('/feedbacks/summaries'),
+            ]);
+
+            setVendors(vendorRes.data.vendors);
+            setTotalCount(vendorRes.data.total);
+            if (vendorRes.data.filters) setFilters(vendorRes.data.filters);
+            setRatingSummaries(summaryRes.data.summaries || {});
         } catch (err) {
             setError('Failed to load vendors');
         } finally {
@@ -56,12 +66,41 @@ export default function VendorsPage() {
 
     const badgeClass = (badge) => (badge || 'none').toLowerCase();
 
+    const renderStars = (rating) => {
+        return (
+            <div className="stars stars-sm">
+                {[1, 2, 3, 4, 5].map(star => (
+                    <span key={star} className={`star ${star <= Math.round(rating) ? 'filled' : ''}`}>★</span>
+                ))}
+            </div>
+        );
+    };
+
+    // Generate a gradient background based on vendor badge
+    const getCardGradient = (badge) => {
+        switch (badge) {
+            case 'Gold': return 'linear-gradient(135deg, rgba(201,163,79,0.15) 0%, rgba(201,163,79,0.03) 50%, transparent 100%)';
+            case 'Silver': return 'linear-gradient(135deg, rgba(192,192,192,0.12) 0%, rgba(192,192,192,0.03) 50%, transparent 100%)';
+            case 'Bronze': return 'linear-gradient(135deg, rgba(205,127,50,0.12) 0%, rgba(205,127,50,0.03) 50%, transparent 100%)';
+            default: return 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 100%)';
+        }
+    };
+
     return (
         <div className="page-wrapper">
             <div className="container">
                 <div className="vendors-header slide-up">
-                    <h1>VOE Certified Vendors</h1>
-                    <p>Discover and evaluate top-tier VFX vendors worldwide, certified by the VFX Operational Excellence program.</p>
+                    <div className="vendors-header-top">
+                        <div>
+                            <h1>VOE Certified Vendors</h1>
+                            <p>Discover and evaluate top-tier VFX vendors worldwide, certified by the VFX Operational Excellence program.</p>
+                        </div>
+                        {!isAdmin && (
+                            <button className="btn btn-primary" onClick={() => setContactOpen(true)} id="contact-btn">
+                                📩 Contact Us
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="vendors-layout">
@@ -76,7 +115,6 @@ export default function VendorsPage() {
                             )}
                         </div>
 
-                        {/* Search */}
                         <form onSubmit={handleSearch} style={{ marginBottom: 'var(--space-lg)' }}>
                             <div className="search-bar">
                                 <span className="search-icon">🔎</span>
@@ -86,7 +124,6 @@ export default function VendorsPage() {
                             </div>
                         </form>
 
-                        {/* Country Filter */}
                         {filters.countries && filters.countries.length > 0 && (
                             <div className="filter-group">
                                 <div className="filter-group-title">Country</div>
@@ -100,7 +137,6 @@ export default function VendorsPage() {
                             </div>
                         )}
 
-                        {/* Size Filter */}
                         {filters.sizes && filters.sizes.length > 0 && (
                             <div className="filter-group">
                                 <div className="filter-group-title">Size</div>
@@ -114,7 +150,6 @@ export default function VendorsPage() {
                             </div>
                         )}
 
-                        {/* Badge Filter */}
                         {filters.badges && filters.badges.length > 0 && (
                             <div className="filter-group">
                                 <div className="filter-group-title">VOE Badge</div>
@@ -129,7 +164,7 @@ export default function VendorsPage() {
                         )}
                     </aside>
 
-                    {/* Vendor List */}
+                    {/* Vendor List — Netflix Style */}
                     <main>
                         <div className="vendors-count">{totalCount} vendor{totalCount !== 1 ? 's' : ''} found</div>
 
@@ -144,66 +179,86 @@ export default function VendorsPage() {
                                 <p>Try adjusting your search or filters.</p>
                             </div>
                         ) : (
-                            <div className="vendors-grid">
-                                {vendors.map(vendor => (
-                                    <div className="vendor-card slide-up" key={vendor._id}
-                                        onClick={() => navigate(`/vendors/${vendor.slug}`)} id={`vendor-${vendor.slug}`}>
-                                        <div className="vendor-card-header">
-                                            <div className="vendor-logo">
+                            <div className="netflix-grid">
+                                {vendors.map(vendor => {
+                                    const summary = ratingSummaries[vendor._id] || { avgRating: 0, totalRatings: 0 };
+                                    return (
+                                        <div className="netflix-card slide-up" key={vendor._id}
+                                            onClick={() => navigate(`/vendors/${vendor.slug}`)}
+                                            id={`vendor-${vendor.slug}`}
+                                            style={{ background: getCardGradient(vendor.badgeVOE) }}>
+                                            {/* Hero Image / Logo */}
+                                            <div className="netflix-card-hero">
                                                 {vendor.logo ? (
-                                                    <img src={vendor.logo} alt={vendor.name} />
+                                                    <img src={vendor.logo} alt={vendor.name} className="netflix-card-img" />
                                                 ) : (
-                                                    vendor.name.charAt(0)
+                                                    <div className="netflix-card-placeholder">
+                                                        <span>{vendor.name.charAt(0)}</span>
+                                                    </div>
                                                 )}
+                                                <div className="netflix-card-overlay">
+                                                    <span className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}>
+                                                        <span className="voe-badge-icon">{BADGE_ICONS[vendor.badgeVOE] || '—'}</span>
+                                                        {vendor.badgeVOE}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="vendor-info">
-                                                <div className="vendor-name">{vendor.name}</div>
-                                                <div className="vendor-meta">
+
+                                            {/* Content */}
+                                            <div className="netflix-card-body">
+                                                <h3 className="netflix-card-name">{vendor.name}</h3>
+                                                <div className="netflix-card-meta">
                                                     <span>📍 {vendor.country}</span>
                                                     <span className="vendor-meta-dot" />
                                                     <span>{vendor.size}</span>
-                                                    {vendor.foundedYear && (
-                                                        <>
-                                                            <span className="vendor-meta-dot" />
-                                                            <span>Est. {vendor.foundedYear}</span>
-                                                        </>
-                                                    )}
+                                                </div>
+
+                                                {vendor.shortDescription && (
+                                                    <p className="netflix-card-desc">{vendor.shortDescription}</p>
+                                                )}
+
+                                                {vendor.services?.length > 0 && (
+                                                    <div className="netflix-card-services">
+                                                        {vendor.services.slice(0, 3).map(s => (
+                                                            <span className="service-tag" key={s}>{s}</span>
+                                                        ))}
+                                                        {vendor.services.length > 3 && (
+                                                            <span className="service-tag" style={{ opacity: 0.6 }}>+{vendor.services.length - 3}</span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="netflix-card-footer">
+                                                    <div className="netflix-card-score">
+                                                        <div className="netflix-score-ring">
+                                                            <span className="netflix-score-val">{vendor.globalScore?.toFixed(1)}</span>
+                                                        </div>
+                                                        <span className="netflix-score-label">VOE</span>
+                                                    </div>
+                                                    <div className="netflix-card-rating">
+                                                        {summary.totalRatings > 0 ? (
+                                                            <>
+                                                                {renderStars(summary.avgRating)}
+                                                                <span className="netflix-rating-info">
+                                                                    {summary.avgRating.toFixed(1)} ({summary.totalRatings})
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="netflix-no-reviews">No reviews yet</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {vendor.shortDescription && (
-                                            <p className="vendor-description">{vendor.shortDescription}</p>
-                                        )}
-
-                                        {vendor.services?.length > 0 && (
-                                            <div className="vendor-services">
-                                                {vendor.services.slice(0, 4).map(s => (
-                                                    <span className="service-tag" key={s}>{s}</span>
-                                                ))}
-                                                {vendor.services.length > 4 && (
-                                                    <span className="service-tag" style={{ opacity: 0.6 }}>+{vendor.services.length - 4}</span>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className="vendor-card-footer">
-                                            <div className="vendor-score">
-                                                <span className="score-value">{vendor.globalScore?.toFixed(1)}</span>
-                                                <span className="score-max">/ 10</span>
-                                            </div>
-                                            <span className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}>
-                                                <span className="voe-badge-icon">{BADGE_ICONS[vendor.badgeVOE] || '—'}</span>
-                                                {vendor.badgeVOE}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </main>
                 </div>
             </div>
+
+            <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />
         </div>
     );
 }
