@@ -1,5 +1,5 @@
 BACKEND :
-C:\Users\DELL\.gemini\antigravity\scratch\vfx-seal\backend>node server.js 
+vfx-seal\backend>node server.js 
 
 create Admin : 
 👤 Admin account created: admin@vfxseal.com / Admin123!
@@ -8,8 +8,8 @@ node seed.js
 
 FRONTEND :
 
-C:\Users\DELL\.gemini\antigravity\scratch\vfx-seal\frontend>npm run dev
+vfx-seal\frontend>npm run dev
 
 
 MongoDB : 
-C:\Users\DELL>mongosh
+\DELL>mongosh
