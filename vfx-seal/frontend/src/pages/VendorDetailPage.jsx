@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/client';
+import FeedbackSection from '../components/FeedbackSection';
 
 const BADGE_ICONS = { Gold: '🏆', Silver: '🥈', Bronze: '🥉', None: '—' };
 
@@ -16,7 +17,6 @@ export default function VendorDetailPage() {
             try {
                 const { data } = await api.get(`/vendors/${slug}`);
                 setVendor(data.vendor);
-                // Open first section by default
                 if (data.vendor.assessment?.length > 0) {
                     setOpenSections({ 0: true });
                 }
@@ -110,6 +110,9 @@ export default function VendorDetailPage() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Feedback & Rating Section — Collapsible Accordion */}
+                    <FeedbackSection vendorId={vendor._id} vendorName={vendor.name} />
 
                     {/* Assessment Sections */}
                     {vendor.assessment?.length > 0 && (

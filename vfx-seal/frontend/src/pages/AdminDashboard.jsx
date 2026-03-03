@@ -10,9 +10,15 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
     const [vendors, setVendors] = useState([]);
+    const [feedbacks, setFeedbacks] = useState([]);
+    const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userFilter, setUserFilter] = useState('');
+    const [feedbackFilter, setFeedbackFilter] = useState('PENDING');
+    const [messageFilter, setMessageFilter] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
+    const [rejectNote, setRejectNote] = useState({});
+    const [replyText, setReplyText] = useState({});
 
     useEffect(() => {
         fetchData();
@@ -28,9 +34,16 @@ export default function AdminDashboard() {
                 const params = userFilter ? `?status=${userFilter}` : '';
                 const { data } = await api.get(`/admin/users${params}`);
                 setUsers(data.users);
-            } else {
+            } else if (activeTab === 'vendors') {
                 const { data } = await api.get('/vendors');
                 setVendors(data.vendors);
+            } else if (activeTab === 'feedbacks') {
+                const { data } = await api.get(`/feedbacks/admin/pending?status=${feedbackFilter || 'PENDING'}`);
+                setFeedbacks(data.feedbacks);
+            } else if (activeTab === 'messages') {
+                const params = messageFilter ? `?status=${messageFilter}` : '';
+                const { data } = await api.get(`/contact/admin/messages${params}`);
+                setMessages(data.messages);
             }
         } catch (err) {
             console.error('Admin fetch error:', err);
@@ -49,6 +62,27 @@ export default function AdminDashboard() {
             fetchUsers();
         }
     }, [userFilter]);
+
+    useEffect(() => {
+        if (activeTab === 'feedbacks') {
+            const fetchFeedbacks = async () => {
+                const { data } = await api.get(`/feedbacks/admin/pending?status=${feedbackFilter || 'PENDING'}`);
+                setFeedbacks(data.feedbacks);
+            };
+            fetchFeedbacks();
+        }
+    }, [feedbackFilter]);
+
+    useEffect(() => {
+        if (activeTab === 'messages') {
+            const fetchMessages = async () => {
+                const params = messageFilter ? `?status=${messageFilter}` : '';
+                const { data } = await api.get(`/contact/admin/messages${params}`);
+                setMessages(data.messages);
+            };
+            fetchMessages();
+        }
+    }, [messageFilter]);
 
     const handleUserAction = async (userId, action) => {
         setActionLoading(`${userId}-${action}`);
@@ -72,7 +106,43 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleFeedbackAction = async (id, action) => {
+        setActionLoading(`${id}-${action}`);
+        try {
+            const body = action === 'reject' ? { adminNote: rejectNote[id] || '' } : {};
+            await api.patch(`/feedbacks/${id}/${action}`, body);
+            await fetchData();
+            setRejectNote(prev => { const n = { ...prev }; delete n[id]; return n; });
+        } catch (err) {
+            alert(`Failed to ${action} feedback`);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleReply = async (id) => {
+        const reply = replyText[id];
+        if (!reply?.trim()) { alert('Please enter a reply'); return; }
+        setActionLoading(`${id}-reply`);
+        try {
+            await api.post(`/contact/admin/reply/${id}`, { reply });
+            await fetchData();
+            setReplyText(prev => { const n = { ...prev }; delete n[id]; return n; });
+        } catch (err) {
+            alert('Failed to send reply');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const badgeClass = (badge) => (badge || 'none').toLowerCase();
+    const renderStars = (rating) => (
+        <span className="stars stars-sm">
+            {[1, 2, 3, 4, 5].map(s => (
+                <span key={s} className={`star ${s <= rating ? 'filled' : ''}`}>★</span>
+            ))}
+        </span>
+    );
 
     return (
         <div className="page-wrapper">
@@ -98,6 +168,14 @@ export default function AdminDashboard() {
                             <div className="stat-card-value" style={{ color: 'var(--info)' }}>{stats.totalVendors}</div>
                             <div className="stat-card-label">Vendors</div>
                         </div>
+                        <div className="stat-card">
+                            <div className="stat-card-value" style={{ color: 'var(--accent)' }}>{stats.pendingFeedbacks}</div>
+                            <div className="stat-card-label">Pending Feedbacks</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-card-value" style={{ color: '#f97316' }}>{stats.newMessages}</div>
+                            <div className="stat-card-label">New Messages</div>
+                        </div>
                     </div>
                 )}
 
@@ -110,6 +188,14 @@ export default function AdminDashboard() {
                     <button className={`admin-tab ${activeTab === 'vendors' ? 'active' : ''}`}
                         onClick={() => setActiveTab('vendors')} id="tab-vendors">
                         🏗 Vendors
+                    </button>
+                    <button className={`admin-tab ${activeTab === 'feedbacks' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('feedbacks')} id="tab-feedbacks">
+                        ⭐ Feedbacks {stats?.pendingFeedbacks > 0 && <span className="tab-badge">{stats.pendingFeedbacks}</span>}
+                    </button>
+                    <button className={`admin-tab ${activeTab === 'messages' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('messages')} id="tab-messages">
+                        📩 Messages {stats?.newMessages > 0 && <span className="tab-badge">{stats.newMessages}</span>}
                     </button>
                 </div>
 
@@ -257,6 +343,141 @@ export default function AdminDashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Feedbacks Tab */}
+                {activeTab === 'feedbacks' && (
+                    <div className="fade-in">
+                        <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                            {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(f => (
+                                <button key={f} className={`btn btn-sm ${feedbackFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setFeedbackFilter(f)} id={`filter-fb-${f.toLowerCase()}`}>
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+
+                        {loading ? (
+                            <div className="loading"><div className="spinner" /></div>
+                        ) : feedbacks.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">⭐</div>
+                                <h3>No feedbacks found</h3>
+                            </div>
+                        ) : (
+                            <div className="admin-feedback-list">
+                                {feedbacks.map(fb => (
+                                    <div className="admin-feedback-card" key={fb._id}>
+                                        <div className="admin-feedback-header">
+                                            <div>
+                                                <div className="admin-feedback-studio">{fb.studioName}</div>
+                                                <div className="admin-feedback-vendor">
+                                                    → {fb.vendorId?.name || 'Unknown Vendor'}
+                                                </div>
+                                                <div className="admin-feedback-date">
+                                                    {new Date(fb.createdAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <div className="admin-feedback-right">
+                                                {renderStars(fb.rating)}
+                                                <span className={`status-badge ${fb.status.toLowerCase()}`}>{fb.status}</span>
+                                            </div>
+                                        </div>
+                                        <p className="admin-feedback-message">{fb.message}</p>
+                                        {fb.adminNote && (
+                                            <div className="admin-feedback-note">
+                                                <strong>Admin note:</strong> {fb.adminNote}
+                                            </div>
+                                        )}
+                                        {fb.status === 'PENDING' && (
+                                            <div className="admin-feedback-actions">
+                                                <button className="btn btn-success btn-sm"
+                                                    onClick={() => handleFeedbackAction(fb._id, 'approve')}
+                                                    disabled={actionLoading === `${fb._id}-approve`}>
+                                                    {actionLoading === `${fb._id}-approve` ? '...' : '✓ Approve'}
+                                                </button>
+                                                <div className="admin-feedback-reject-group">
+                                                    <input className="form-input" placeholder="Admin note (optional)"
+                                                        value={rejectNote[fb._id] || ''}
+                                                        onChange={(e) => setRejectNote(prev => ({ ...prev, [fb._id]: e.target.value }))}
+                                                        style={{ fontSize: '0.8rem' }} />
+                                                    <button className="btn btn-danger btn-sm"
+                                                        onClick={() => handleFeedbackAction(fb._id, 'reject')}
+                                                        disabled={actionLoading === `${fb._id}-reject`}>
+                                                        ✗ Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Messages Tab */}
+                {activeTab === 'messages' && (
+                    <div className="fade-in">
+                        <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                            {['', 'NEW', 'REPLIED', 'CLOSED'].map(f => (
+                                <button key={f} className={`btn btn-sm ${messageFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setMessageFilter(f)} id={`filter-msg-${f || 'all'}`}>
+                                    {f || 'All'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {loading ? (
+                            <div className="loading"><div className="spinner" /></div>
+                        ) : messages.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📩</div>
+                                <h3>No messages found</h3>
+                            </div>
+                        ) : (
+                            <div className="admin-messages-list">
+                                {messages.map(msg => (
+                                    <div className="admin-message-card" key={msg._id}>
+                                        <div className="admin-message-header">
+                                            <div>
+                                                <div className="admin-message-studio">{msg.studioName}</div>
+                                                <div className="admin-message-email">{msg.studioEmail}</div>
+                                                <div className="admin-message-date">
+                                                    {new Date(msg.createdAt).toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <span className={`status-badge ${msg.status.toLowerCase()}`}>{msg.status}</span>
+                                        </div>
+                                        <div className="admin-message-subject">📋 {msg.subject}</div>
+                                        <p className="admin-message-body">{msg.message}</p>
+                                        {msg.adminReply && (
+                                            <div className="admin-message-reply">
+                                                <strong>Your reply:</strong>
+                                                <p>{msg.adminReply}</p>
+                                                <small>Replied {new Date(msg.repliedAt).toLocaleString()}</small>
+                                            </div>
+                                        )}
+                                        {msg.status === 'NEW' && (
+                                            <div className="admin-message-reply-form">
+                                                <textarea className="form-input form-textarea"
+                                                    placeholder="Type your reply..."
+                                                    rows="3"
+                                                    value={replyText[msg._id] || ''}
+                                                    onChange={(e) => setReplyText(prev => ({ ...prev, [msg._id]: e.target.value }))}
+                                                />
+                                                <button className="btn btn-primary btn-sm"
+                                                    onClick={() => handleReply(msg._id)}
+                                                    disabled={actionLoading === `${msg._id}-reply`}>
+                                                    {actionLoading === `${msg._id}-reply` ? 'Sending...' : '📤 Send Reply'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

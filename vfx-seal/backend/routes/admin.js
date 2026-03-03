@@ -1,5 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
+const Feedback = require('../models/Feedback');
+const ContactMessage = require('../models/ContactMessage');
 const { protect, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
@@ -91,15 +93,23 @@ router.patch('/users/:id/block', async (req, res) => {
 // GET /api/admin/stats — dashboard stats
 router.get('/stats', async (req, res) => {
     try {
-        const [totalStudios, pendingStudios, approvedStudios, rejectedStudios] = await Promise.all([
+        const Vendor = require('../models/Vendor');
+
+        const [
+            totalStudios, pendingStudios, approvedStudios, rejectedStudios,
+            totalVendors,
+            pendingFeedbacks, totalFeedbacks,
+            newMessages,
+        ] = await Promise.all([
             User.countDocuments({ role: 'STUDIO' }),
             User.countDocuments({ role: 'STUDIO', status: 'PENDING' }),
             User.countDocuments({ role: 'STUDIO', status: 'APPROVED' }),
             User.countDocuments({ role: 'STUDIO', status: 'REJECTED' }),
+            Vendor.countDocuments(),
+            Feedback.countDocuments({ status: 'PENDING' }),
+            Feedback.countDocuments(),
+            ContactMessage.countDocuments({ status: 'NEW' }),
         ]);
-
-        const Vendor = require('../models/Vendor');
-        const totalVendors = await Vendor.countDocuments();
 
         res.json({
             totalStudios,
@@ -107,6 +117,9 @@ router.get('/stats', async (req, res) => {
             approvedStudios,
             rejectedStudios,
             totalVendors,
+            pendingFeedbacks,
+            totalFeedbacks,
+            newMessages,
         });
     } catch (error) {
         console.error('Admin stats error:', error);
