@@ -59,7 +59,6 @@ export default function HomePage() {
             )}
           </div>
           <div className="hero-stats">
-            <div className="hero-stat-divider" />
             <div className="hero-stat">
               <div className="hero-stat-value">85+</div>
               <div className="hero-stat-label">Countries</div>

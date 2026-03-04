@@ -109,6 +109,22 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  cursor: default;
+}
+
+/* CRITICAL: Force normal website behavior, prevent editable mode */
+body, 
+#root, 
+main, 
+.container, 
+.page-wrapper,
+.hero-section,
+.hero-content,
+.hero-visual,
+div:not(.form-input):not(.tags-input):not([contenteditable="true"]) {
+  cursor: default !important;
+  -webkit-user-modify: read-only;
+  user-select: none;
 }
 
 body::before {
@@ -146,10 +162,50 @@ a:hover {
 img {
   max-width: 100%;
   height: auto;
+  user-select: none !important;
+  -webkit-user-drag: none;
+  -webkit-user-modify: read-only !important;
+  cursor: default !important;
+}
+
+/* Force proper text selection behavior */
+p, h1, h2, h3, h4, h5, h6, li, a, span {
+  user-select: none !important;
+  cursor: default !important;
+  -webkit-user-modify: read-only !important;
+}
+
+/* ONLY actual inputs should have text cursor and be editable */
+input, 
+textarea, 
+select,
+[contenteditable="true"],
+.form-input,
+.form-textarea,
+.tags-input {
+  cursor: text !important;
+  -webkit-user-modify: read-write;
+}
+
+/* Ensure buttons never act as text inputs */
+button, .btn {
+  cursor: pointer !important;
+  -webkit-user-modify: read-only !important;
+  user-select: none !important;
 }
 
 ul, ol {
   list-style: none;
+}
+
+/* SAFEGUARD: Ensure no wrapper ever becomes editable accidentally */
+*:not(input):not(textarea):not([contenteditable="true"]):not(.form-input):not(.tags-input) {
+  -webkit-user-modify: read-only !important;
+}
+
+/* Prevent any element from accidentally getting contenteditable */
+* {
+  outline: none;
 }
 
 /* ---------- Typography ---------- */
@@ -2572,7 +2628,7 @@ h4 { font-size: 1.125rem; }
 }
 
 .seal-logo {
-  width: 140px;
+  width: 350px;
   height: auto;
   filter: drop-shadow(0 10px 25px rgba(0,0,0,0.4));
 }
@@ -3146,3 +3202,9 @@ h4 { font-size: 1.125rem; }
     width: 95%;
   }
 }
+
+/* ========== SAFE CSS OVERRIDES ========== */
+/* Ensure ONLY input/textarea/select behave like inputs */
+html, body, #root { cursor: default; }
+input, textarea, select { cursor: text; }
+*:not(input):not(textarea):not(select) { caret-color: transparent; }
