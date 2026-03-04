@@ -2564,6 +2564,19 @@ h4 { font-size: 1.125rem; }
   height: 300px;
 }
 
+/* Seal logo container and styling */
+.seal-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.seal-logo {
+  width: 140px;
+  height: auto;
+  filter: drop-shadow(0 10px 25px rgba(0,0,0,0.4));
+}
+
 .hero-float-card {
   position: absolute;
   background: var(--bg-card);
