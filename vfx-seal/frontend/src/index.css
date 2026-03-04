@@ -2810,6 +2810,11 @@ h4 { font-size: 1.125rem; }
   border-top: 1px solid var(--glass-border);
 }
 
+.footer-links {
+  display: flex;
+  gap: 24px; /* this fixes the buttons being too close */
+}
+
 .footer-inner {
   display: flex;
   align-items: center;
