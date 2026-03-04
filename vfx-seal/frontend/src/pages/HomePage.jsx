@@ -183,7 +183,7 @@ export default function HomePage() {
                 <div className="container">
                     <div className="footer-inner">
                         <div className="footer-brand">
-                            <span className="seal-icon">VS</span>
+                            
                             VFX <span className="accent">Seal</span>
                         </div>
                         <div className="footer-links">

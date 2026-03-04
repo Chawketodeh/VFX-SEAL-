@@ -67,7 +67,7 @@ export default function ContactPage() {
         <nav className="navbar" id="contact-navbar">
           <div className="navbar-inner">
             <Link to="/" className="navbar-brand">
-              <span className="seal-icon">VS</span>
+              
               VFX <span className="accent">Seal</span>
             </Link>
             <div className="navbar-links">
@@ -278,7 +278,7 @@ export default function ContactPage() {
         <div className="container">
           <div className="footer-inner">
             <div className="footer-brand">
-              <span className="seal-icon">VS</span>
+              
               VFX <span className="accent">Seal</span>
             </div>
             <div className="footer-links">
