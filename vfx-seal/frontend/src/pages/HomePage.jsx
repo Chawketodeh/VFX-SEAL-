@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import sealLogo from "../assets/seal.png";
+import registerstep from "../assets/register-step.avif";
+import verificationstep from "../assets/verification-step.jfif";
+import approvedstep from "../assets/approved-step.avif";
+import explorstep from "../assets/explore-step.avif";
+import AssessorsSection from "../components/AssessorsSection";
+import aboutImage from "../assets/about-image.webp";
 
 export default function HomePage() {
   const { isLoggedIn, isAdmin, isApproved } = useAuth();
@@ -107,101 +113,200 @@ export default function HomePage() {
             <span className="section-tag">Process</span>
             <h2 className="section-title">How It Works</h2>
             <p className="section-subtitle">
-              From certification to collaboration — in three simple steps
+              From registration to exploration — your journey to verified VFX
+              partnerships
             </p>
           </div>
-          <div className="how-grid">
-            <div className="how-card">
+          <div className="how-grid-enhanced">
+            <div className="how-card-enhanced">
               <div className="how-card-number">01</div>
-              <div className="how-card-icon">📋</div>
-              <h3>VOE Assessment</h3>
+              <div className="how-card-image">
+                <img
+                  src={registerstep}
+                  alt="Developer coding screen"
+                  className="step-image"
+                />
+              </div>
+              <h3>Register</h3>
               <p>
-                VFX vendors undergo a comprehensive assessment across multiple
-                operational categories, evaluated by industry experts.
+                Sign up using your official company email, specifying your role
+                and region.
               </p>
             </div>
-            <div className="how-card">
+            <div className="how-card-enhanced">
               <div className="how-card-number">02</div>
-              <div className="how-card-icon">🏅</div>
-              <h3>Certification & Scoring</h3>
+              <div className="how-card-image">
+                <img
+                  src={verificationstep}
+                  alt="Team review and validation"
+                  className="step-image"
+                />
+              </div>
+              <h3>Verification</h3>
               <p>
-                Based on assessment results, vendors receive a VOE Score and
-                Badge level — Bronze, Silver, or Gold — reflecting their
-                operational excellence.
+                Our team manually reviews and verifies each profile to ensure
+                exclusivity and security.
               </p>
             </div>
-            <div className="how-card">
+            <div className="how-card-enhanced">
               <div className="how-card-number">03</div>
-              <div className="how-card-icon">🤝</div>
-              <h3>Studio Discovery</h3>
+              <div className="how-card-image">
+                <img
+                  src={approvedstep}
+                  alt="Modern architecture corridor"
+                  className="step-image"
+                />
+              </div>
+              <h3>Approved</h3>
               <p>
-                VFX studios access the certified vendor directory, compare
-                scores, read reviews, and select the best partners for their
-                projects.
+                Access is granted exclusively to decision-makers from verified
+                VFX studios.
+              </p>
+            </div>
+            <div className="how-card-enhanced">
+              <div className="how-card-number">04</div>
+              <div className="how-card-image">
+                <img
+                  src={explorstep}
+                  alt="Earth from space with city lights"
+                  className="step-image"
+                />
+              </div>
+              <h3>Explore</h3>
+              <p>
+                Discover certified VFX vendors through detailed profiles, VOE
+                scores, and independent audit reports. Your research and
+                activity remain strictly confidential.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="trust-section">
+      {/* Assessor Network Section */}
+      <AssessorsSection />
+
+      {/* About The Seal Section - Editorial Layout */}
+      <section className="about-section-editorial">
         <div className="container">
           <div className="section-header">
-            <span className="section-tag">Trust</span>
-            <h2 className="section-title">Why VFX Seal?</h2>
+            <span className="section-tag">About</span>
+            <h2 className="section-title">About The Seal</h2>
             <p className="section-subtitle">
               The industry's most trusted vendor certification platform
             </p>
           </div>
-          <div className="trust-grid">
-            <div className="trust-card">
-              <div className="trust-icon">🔒</div>
-              <h3>Secure & Private</h3>
-              <p>
-                Enterprise-grade security. Only approved studios can access
-                vendor data. JWT authentication and role-based access control.
-              </p>
+
+          <div className="about-editorial-layout">
+            {/* Left Column - Content */}
+            <div className="about-content-column">
+              {/* Highlight Introduction Box */}
+              <div className="about-highlight-box">
+                <p>
+                  The Seal is an exclusive platform designed specifically for
+                  VFX studio executives. Our mission is to connect you with the
+                  industry's top vendors, each certified through the VOE (VFX
+                  Operational Excellence) label.
+                </p>
+              </div>
+
+              {/* Feature List */}
+              <div className="about-features-list">
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>Exclusive</h3>
+                    <p>
+                      Access limited to verified VFX studios and
+                      decision-makers. Our exclusive membership ensures
+                      high-quality networking and trusted partnerships.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>No-Paywall Access</h3>
+                    <p>
+                      Complete access to vendor profiles, scores, and reports at
+                      no cost. We believe quality information should be freely
+                      available to industry professionals.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>Certified Vendor Network</h3>
+                    <p>
+                      Every vendor undergoes rigorous VOE assessment.
+                      Multi-category evaluation ensures you work with
+                      operationally excellent partners.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>Direct Access & Full Autonomy</h3>
+                    <p>
+                      Browse, compare, and contact vendors directly. No
+                      intermediaries, no commissions, no restrictions on your
+                      business relationships.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>Strict Data Privacy & Confidentiality</h3>
+                    <p>
+                      Enterprise-grade security protects your information.
+                      Vendors only see company name and logo — no personal
+                      details or contact information shared.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>360° Improvement & Vendor Comparison</h3>
+                    <p>
+                      Comprehensive scoring across all operational areas.
+                      Detailed breakdowns help you identify the perfect match
+                      for specific project requirements.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about-feature-item">
+                  <div className="feature-separator"></div>
+                  <div className="feature-content">
+                    <h3>Reliable, Verified Information</h3>
+                    <p>
+                      All vendor data verified through independent assessment.
+                      Regular re-evaluations ensure information remains current
+                      and accurate.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="trust-card">
-              <div className="trust-icon">📊</div>
-              <h3>Data-Driven Decisions</h3>
-              <p>
-                Transparent scoring across multiple assessment categories.
-                Detailed reports for informed vendor selection.
-              </p>
-            </div>
-            <div className="trust-card">
-              <div className="trust-icon">⭐</div>
-              <h3>Community Reviews</h3>
-              <p>
-                Real feedback from verified studios. Read honest reviews and
-                ratings to complement the VOE assessment data.
-              </p>
-            </div>
-            <div className="trust-card">
-              <div className="trust-icon">🌍</div>
-              <h3>Global Network</h3>
-              <p>
-                Vendors across 35+ countries. Filter by region, size,
-                specialization, and badge level to find the perfect match.
-              </p>
-            </div>
-            <div className="trust-card">
-              <div className="trust-icon">📄</div>
-              <h3>Detailed Reports</h3>
-              <p>
-                Access full PDF assessment reports with granular skill-level
-                breakdowns for every certified vendor.
-              </p>
-            </div>
-            <div className="trust-card">
-              <div className="trust-icon">🔄</div>
-              <h3>Continuous Updates</h3>
-              <p>
-                Regular re-assessments ensure vendor certifications remain
-                current and reflect operational reality.
-              </p>
+
+            {/* Right Column - Premium Image */}
+            <div className="about-image-column">
+              <div className="about-feature-image">
+                <img
+                  src={aboutImage}
+                  alt="Modern architecture spiral staircase"
+                  className="about-main-image"
+                />
+              </div>
             </div>
           </div>
         </div>

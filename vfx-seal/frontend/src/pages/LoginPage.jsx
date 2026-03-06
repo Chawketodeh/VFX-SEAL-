@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import sealLogo from "../assets/seal.png";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -33,14 +34,17 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      <Link to="/" className="auth-back-arrow">
+        ← Back to Home
+      </Link>
       <div className="auth-card fade-in">
         <div className="auth-header">
-          <div className="auth-logo">
-            <div className="auth-logo-icon">VS</div>
+          <Link to="/" className="auth-logo">
+            <img src={sealLogo} alt="The Seal Logo" className="auth-logo-img" />
             <div className="auth-logo-text">
               VFX <span className="accent">Seal</span>
             </div>
-          </div>
+          </Link>
           <p className="auth-subtitle">Sign in to your studio account</p>
         </div>
 
