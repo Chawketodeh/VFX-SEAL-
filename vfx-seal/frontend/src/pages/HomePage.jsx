@@ -3,8 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import sealLogo from "../assets/seal.png";
 import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
-import Confidentialitystep from "../assets/confidentiality-step.jpg";
-import explorstep from "../assets/explore-step.avif";
+import Confidentialitystep from "../assets/Confidentiality-step.jpg";
+import explorstep from "../assets/Explore-step.avif";
 import AssessorsSection from "../components/AssessorsSection";
 import aboutImage from "../assets/about-image.webp";
 
