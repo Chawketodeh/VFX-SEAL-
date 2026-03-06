@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import sealLogo from "../assets/seal.png";
 import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
-import approvedstep from "../assets/approved-step.avif";
+import Confidentialitystep from "../assets/confidentiality-step.jpg";
 import explorstep from "../assets/explore-step.avif";
 import AssessorsSection from "../components/AssessorsSection";
 import aboutImage from "../assets/about-image.webp";
@@ -152,23 +152,8 @@ export default function HomePage() {
               <div className="how-card-number">03</div>
               <div className="how-card-image">
                 <img
-                  src={approvedstep}
-                  alt="Modern architecture corridor"
-                  className="step-image"
-                />
-              </div>
-              <h3>Approved</h3>
-              <p>
-                Access is granted exclusively to decision-makers from verified
-                VFX studios.
-              </p>
-            </div>
-            <div className="how-card-enhanced">
-              <div className="how-card-number">04</div>
-              <div className="how-card-image">
-                <img
                   src={explorstep}
-                  alt="Earth from space with city lights"
+                  alt="Modern architecture corridor"
                   className="step-image"
                 />
               </div>
@@ -177,6 +162,21 @@ export default function HomePage() {
                 Discover certified VFX vendors through detailed profiles, VOE
                 scores, and independent audit reports. Your research and
                 activity remain strictly confidential.
+              </p>
+            </div>
+            <div className="how-card-enhanced">
+              <div className="how-card-number">04</div>
+              <div className="how-card-image">
+                <img
+                  src={Confidentialitystep}
+                  alt="Earth from space with city lights"
+                  className="step-image"
+                />
+              </div>
+              <h3>Confidence</h3>
+              <p>
+                All information is strictly for your internal use and must not
+                be shared externally.
               </p>
             </div>
           </div>
