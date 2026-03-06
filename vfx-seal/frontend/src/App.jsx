@@ -5,6 +5,8 @@ import VantaNetBackground from "./components/VantaNetBackground";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PendingPage from "./pages/PendingPage";
 import VendorsPage from "./pages/VendorsPage";
 import VendorDetailPage from "./pages/VendorDetailPage";
@@ -78,6 +80,28 @@ export default function App() {
           path="/register"
           element={
             isLoggedIn ? <Navigate to="/vendors" replace /> : <RegisterPage />
+          }
+        />
+
+        {/* Password Reset Routes - Public */}
+        <Route
+          path="/forgot-password"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/vendors" replace />
+            ) : (
+              <ForgotPasswordPage />
+            )
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/vendors" replace />
+            ) : (
+              <ResetPasswordPage />
+            )
           }
         />
 

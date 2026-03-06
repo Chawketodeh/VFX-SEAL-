@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import TermsModal from "../components/TermsModal";
 import sealLogo from "../assets/seal.png";
@@ -44,6 +45,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -197,16 +200,26 @@ export default function RegisterPage() {
             <label className="form-label" htmlFor="reg-password">
               Password *
             </label>
-            <input
-              id="reg-password"
-              name="password"
-              className="form-input"
-              type="password"
-              placeholder="Min 6 characters"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="password-input-container">
+              <input
+                id="reg-password"
+                name="password"
+                className="form-input password-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 6 characters"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="form-group">

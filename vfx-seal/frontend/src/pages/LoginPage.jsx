@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import sealLogo from "../assets/seal.png";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Check for success message from registration
+  const registrationSuccess = location.state?.registered;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,6 +54,12 @@ export default function LoginPage() {
           <p className="auth-subtitle">Sign in to your studio account</p>
         </div>
 
+        {registrationSuccess && (
+          <div className="alert alert-success">
+            ✅ Registration successful! Your account is pending approval.
+          </div>
+        )}
+
         {error && <div className="alert alert-error">⚠ {error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit} id="login-form">
@@ -70,15 +82,31 @@ export default function LoginPage() {
             <label className="form-label" htmlFor="login-password">
               Password
             </label>
-            <input
-              id="login-password"
-              className="form-input"
-              type="password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-            />
+            <div className="password-input-container">
+              <input
+                id="login-password"
+                className="form-input password-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <div className="form-links">
+              <Link to="/forgot-password" className="forgot-password-link">
+                Forgot your password?
+              </Link>
+            </div>
           </div>
 
           <button
