@@ -37,13 +37,15 @@ export default function HomePage() {
             />
           ))}
         </div>
-        <div className="hero-glow" />
+        <div className="hero-glow-frame">
+          <div className="hero-glow" />
+        </div>
         <div className="hero-content">
           <div className="hero-badge"> VFX Operational Excellence</div>
           <h1 className="hero-title">
-            The <span className="hero-accent">Gold Standard</span> for
+            The <span className="hero-accent">Trusted </span> Gateway
             <br />
-            VFX Vendor Certification
+            to find VFX vendors.
           </h1>
           <p className="hero-subtitle">
             VFX Seal is the definitive platform for VFX studios seeking
@@ -64,17 +66,6 @@ export default function HomePage() {
               </Link>
             )}
           </div>
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <div className="hero-stat-value">85+</div>
-              <div className="hero-stat-label">Countries</div>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <div className="hero-stat-value">360+</div>
-              <div className="hero-stat-label">Feedback Certification</div>
-            </div>
-          </div>
         </div>
         <div className="hero-visual">
           <div className="seal-logo-container">
@@ -83,25 +74,6 @@ export default function HomePage() {
               alt="VFX Seal Certification"
               className="seal-logo"
             />
-          </div>
-          <div className="score-cards">
-            <div className="hero-card-stack">
-              <div className="hero-float-card card-1">
-                <div className="hfc-badge gold"> Gold</div>
-                <div className="hfc-score">9.2</div>
-                <div className="hfc-name">Example Studio</div>
-              </div>
-              <div className="hero-float-card card-2">
-                <div className="hfc-badge silver"> Silver</div>
-                <div className="hfc-score">7.8</div>
-                <div className="hfc-name">VFX Partner</div>
-              </div>
-              <div className="hero-float-card card-3">
-                <div className="hfc-badge gold"> Gold</div>
-                <div className="hfc-score">9.5</div>
-                <div className="hfc-name">Elite VFX</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -324,7 +296,7 @@ export default function HomePage() {
             </p>
             <div className="cta-buttons">
               <Link to={getStartedLink} className="btn btn-primary btn-xl">
-                {isLoggedIn ? "Browse Vendors" : "Get Started — It's Free"}
+                {isLoggedIn ? "Browse Vendors" : "Get Started"}
               </Link>
               {!isLoggedIn && (
                 <Link to="/login" className="btn btn-outline btn-xl">
