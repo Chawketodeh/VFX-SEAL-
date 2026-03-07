@@ -67,7 +67,6 @@ export default function ContactPage() {
         <nav className="navbar" id="contact-navbar">
           <div className="navbar-inner">
             <Link to="/" className="navbar-brand">
-              
               VFX <span className="accent">Seal</span>
             </Link>
             <div className="navbar-links">
@@ -278,7 +277,6 @@ export default function ContactPage() {
         <div className="container">
           <div className="footer-inner">
             <div className="footer-brand">
-              
               VFX <span className="accent">Seal</span>
             </div>
             <div className="footer-links">
@@ -287,7 +285,8 @@ export default function ContactPage() {
               {!isLoggedIn && <Link to="/login">Login</Link>}
             </div>
             <p className="footer-copy">
-              © {new Date().getFullYear()} VFX Seal. All rights reserved.
+              © The Seal - <Link to="/terms">Terms & Conditions</Link> -{" "}
+              <Link to="/privacy-policy">Privacy Policy</Link>
             </p>
           </div>
         </div>

@@ -13,6 +13,8 @@ import VendorDetailPage from "./pages/VendorDetailPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVendorForm from "./pages/AdminVendorForm";
 import ContactPage from "./pages/ContactPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 
 function ProtectedRoute({
   children,
@@ -58,7 +60,9 @@ export default function App() {
 
         {/* Contact — always public */}
         <Route path="/contact" element={<ContactPage />} />
-
+        {/* Legal Pages — always public */}
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         {/* Public auth pages */}
         <Route
           path="/login"

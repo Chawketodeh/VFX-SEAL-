@@ -321,7 +321,8 @@ export default function HomePage() {
               {!isLoggedIn && <Link to="/login">Login</Link>}
             </div>
             <p className="footer-copy">
-              © {new Date().getFullYear()} VFX Seal. All rights reserved.
+              © The Seal - <Link to="/terms">Terms & Conditions</Link> -{" "}
+              <Link to="/privacy-policy">Privacy Policy</Link>
             </p>
           </div>
         </div>
