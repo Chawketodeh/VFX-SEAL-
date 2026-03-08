@@ -155,6 +155,108 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Vendor Showcase - Connected to Explore Step */}
+      <section className="vendor-showcase-section">
+        <div className="container">
+          <div className="showcase-header">
+            <span className="section-tag">Preview</span>
+            <h2 className="section-title">Discover Top-Rated VFX Studios</h2>
+            <p className="section-subtitle">
+              Get a glimpse of the certified vendors in our exclusive network
+            </p>
+          </div>
+
+          <div className="vendor-showcase-grid">
+            <div className="showcase-vendor-card">
+              <div className="vendor-showcase-header">
+                <div className="vendor-showcase-logo">IL</div>
+                <div className="vendor-showcase-info">
+                  <h3>ILM Studios</h3>
+                  <span className="vendor-location">San Francisco, USA</span>
+                </div>
+                <div className="voe-score-badge gold">
+                  <span className="score">9.2</span>
+                  <span className="max">/10</span>
+                </div>
+              </div>
+              <div className="vendor-showcase-services">
+                <span className="service-tag">VFX Supervision</span>
+                <span className="service-tag">Compositing</span>
+                <span className="service-tag">3D Animation</span>
+              </div>
+            </div>
+
+            <div className="showcase-vendor-card">
+              <div className="vendor-showcase-header">
+                <div className="vendor-showcase-logo">DN</div>
+                <div className="vendor-showcase-info">
+                  <h3>Double Negative</h3>
+                  <span className="vendor-location">London, UK</span>
+                </div>
+                <div className="voe-score-badge gold">
+                  <span className="score">8.9</span>
+                  <span className="max">/10</span>
+                </div>
+              </div>
+              <div className="vendor-showcase-services">
+                <span className="service-tag">Environment VFX</span>
+                <span className="service-tag">Creature Work</span>
+                <span className="service-tag">Matte Painting</span>
+              </div>
+            </div>
+
+            <div className="showcase-vendor-card">
+              <div className="vendor-showcase-header">
+                <div className="vendor-showcase-logo">WE</div>
+                <div className="vendor-showcase-info">
+                  <h3>Weta Digital</h3>
+                  <span className="vendor-location">Wellington, NZ</span>
+                </div>
+                <div className="voe-score-badge gold">
+                  <span className="score">9.5</span>
+                  <span className="max">/10</span>
+                </div>
+              </div>
+              <div className="vendor-showcase-services">
+                <span className="service-tag">Motion Capture</span>
+                <span className="service-tag">Digital Humans</span>
+                <span className="service-tag">Real-time VFX</span>
+              </div>
+            </div>
+
+            <div className="showcase-vendor-card">
+              <div className="vendor-showcase-header">
+                <div className="vendor-showcase-logo">FR</div>
+                <div className="vendor-showcase-info">
+                  <h3>Framestore</h3>
+                  <span className="vendor-location">London, UK</span>
+                </div>
+                <div className="voe-score-badge silver">
+                  <span className="score">8.7</span>
+                  <span className="max">/10</span>
+                </div>
+              </div>
+              <div className="vendor-showcase-services">
+                <span className="service-tag">Character Animation</span>
+                <span className="service-tag">Virtual Production</span>
+                <span className="service-tag">Post-Production</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="showcase-cta">
+            <div className="showcase-blur-overlay">
+              <div className="showcase-unlock-message">
+                <h3>Join The Seal to Access Full Network</h3>
+                <p>Get verified access to certified VFX vendors worldwide</p>
+                <Link to={getStartedLink} className="btn btn-primary btn-lg">
+                  {isLoggedIn ? "Browse All Vendors" : "Request Access"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* Assessor Network Section */}
       <AssessorsSection />
 
@@ -320,10 +422,20 @@ export default function HomePage() {
               <Link to="/contact">Contact</Link>
               {!isLoggedIn && <Link to="/login">Login</Link>}
             </div>
-            <p className="footer-copy">
-              © The Seal - <Link to="/terms">Terms & Conditions</Link> -{" "}
-              <Link to="/privacy-policy">Privacy Policy</Link>
-            </p>
+            <div className="footer-copy">
+              <div className="footer-copyright">
+                © The Seal — All rights reserved
+              </div>
+              <div className="footer-legal">
+                <Link to="/terms" className="footer-legal-link">
+                  Terms & Conditions
+                </Link>
+                <span className="footer-separator">•</span>
+                <Link to="/privacy-policy" className="footer-legal-link">
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
 import VantaNetBackground from "./components/VantaNetBackground";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -49,6 +50,9 @@ export default function App() {
 
   return (
     <>
+      {/* ScrollToTop component for handling route navigation scroll behavior */}
+      <ScrollToTop />
+      
       {/* Vanta.NET animated background */}
       <VantaNetBackground />
 

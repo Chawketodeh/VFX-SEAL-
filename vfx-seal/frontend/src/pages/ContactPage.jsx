@@ -78,7 +78,8 @@ export default function ContactPage() {
             <div className="navbar-actions-public">
               <Link to="/register" className="btn btn-primary btn-sm">
                 Join the Club
-              </Link>
+              </Link>{" "}
+              {""}
               <Link to="/login" className="btn btn-outline btn-sm">
                 Login
               </Link>
@@ -256,7 +257,7 @@ export default function ContactPage() {
                       required
                     />
                   </div>
-
+                  <br />
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg contact-submit-btn"
@@ -284,10 +285,20 @@ export default function ContactPage() {
               <Link to="/contact">Contact</Link>
               {!isLoggedIn && <Link to="/login">Login</Link>}
             </div>
-            <p className="footer-copy">
-              © The Seal - <Link to="/terms">Terms & Conditions</Link> -{" "}
-              <Link to="/privacy-policy">Privacy Policy</Link>
-            </p>
+            <div className="footer-copy">
+              <div className="footer-copyright">
+                © The Seal — All rights reserved
+              </div>
+              <div className="footer-legal">
+                <Link to="/terms" className="footer-legal-link">
+                  Terms & Conditions
+                </Link>
+                <span className="footer-separator">•</span>
+                <Link to="/privacy-policy" className="footer-legal-link">
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
