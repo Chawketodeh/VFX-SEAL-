@@ -1318,6 +1318,20 @@ h4 { font-size: 1.125rem; }
   gap: var(--space-sm);
 }
 
+.assessment-controls {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  justify-content: flex-start;
+}
+
+.assessment-controls .btn {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
 .vendor-detail-pdf {
   margin-top: var(--space-xl);
   padding: var(--space-lg);
