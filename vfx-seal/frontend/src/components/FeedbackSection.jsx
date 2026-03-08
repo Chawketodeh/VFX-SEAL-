@@ -150,7 +150,7 @@ export default function FeedbackSection({ vendorId, vendorName }) {
                 <h3>💬 Studio Reviews</h3>
                 {feedbacks.map((fb) => (
                   <div
-                    className={`feedback-item ${fb.status === "REJECTED" ? "feedback-rejected" : ""}`}
+                    className={`feedback-item ${fb.status === "REJECTED" ? "feedback-rejected" : ""} ${fb.status === "HIDDEN" ? "feedback-hidden" : ""}`}
                     key={fb._id}
                   >
                     {fb.status === "REJECTED" ? (
@@ -178,6 +178,30 @@ export default function FeedbackSection({ vendorId, vendorName }) {
                         <div className="feedback-rejected-notice">
                           This review was removed due to inappropriate or
                           violent content.
+                        </div>
+                      </>
+                    ) : fb.status === "HIDDEN" ? (
+                      <>
+                        {/* Hidden/flagged feedback for regular users */}
+                        <div className="feedback-hidden-content">
+                          <div className="feedback-item-header">
+                            <div className="feedback-item-studio">
+                              <div className="feedback-item-avatar">
+                                {fb.studioName.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="feedback-item-name">
+                                  {fb.studioName}
+                                </div>
+                                <div className="feedback-item-date">
+                                  {formatDate(fb.createdAt)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="feedback-hidden-notice">
+                          {fb.message}
                         </div>
                       </>
                     ) : (

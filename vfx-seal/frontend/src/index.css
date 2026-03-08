@@ -2301,6 +2301,27 @@ h4 { font-size: 1.125rem; }
   line-height: 1.6;
 }
 
+/* Hidden/Flagged Feedback Styles */
+.feedback-hidden {
+  opacity: 0.7;
+}
+
+.feedback-hidden-content {
+  filter: blur(1px);
+  opacity: 0.5;
+}
+
+.feedback-hidden-notice {
+  background: var(--warning-bg);
+  color: var(--warning);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-style: italic;
+  border-left: 3px solid var(--warning);
+  margin-top: var(--space-sm);
+}
+
 /* ============================================
    NEW — Netflix-style Vendor Cards
    ============================================ */
@@ -2674,7 +2695,7 @@ h4 { font-size: 1.125rem; }
 .btn-outline {
   background: transparent;
   color: var(--text-primary);
-  border: 1px solid var(--glass-border-hover);
+  border: 3px solid var(--glass-border-hover);
 }
 
 .btn-outline:hover {
@@ -3496,6 +3517,37 @@ h4 { font-size: 1.125rem; }
 .admin-message-email {
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+/* Flagged Feedback Admin Styles */
+.admin-feedback-flagged {
+  border-left: 4px solid var(--warning);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.admin-feedback-flag-info {
+  font-size: 0.75rem;
+  color: var(--warning);
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--warning-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.status-badge.flagged {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Admin message actions */
+.admin-message-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
 }
 
 .admin-message-subject {
