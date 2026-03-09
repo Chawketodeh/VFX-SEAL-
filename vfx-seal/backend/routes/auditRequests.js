@@ -4,6 +4,13 @@ const AuditRequest = require("../models/AuditRequest");
 const Vendor = require("../models/Vendor");
 const { protect: auth } = require("../middleware/auth");
 
+const statusDisplayMap = {
+  pending: "Pending Review",
+  accepted: "Accepted - In Progress",
+  completed: "Completed",
+  rejected: "Declined",
+};
+
 // @route   POST /api/audit-requests
 // @desc    Create a new audit request
 // @access  Private (Approved Studio Users only)
@@ -178,15 +185,15 @@ router.get("/my-requests", auth, async (req, res) => {
       requests: requests.map((req) => ({
         id: req._id,
         vendor: req.vendorId,
+        vendorName: req.vendorName,
         sectionName: req.sectionName,
         itemName: req.itemName,
         itemType: req.itemType,
         status: req.status,
-        statusDisplay: req.getStatusDisplay
-          ? req.getStatusDisplay()
-          : req.status,
+        statusDisplay: statusDisplayMap[req.status] || req.status,
         isAnonymous: req.isAnonymous,
         message: req.message,
+        adminReply: req.adminNotes || "",
         createdAt: req.createdAt,
         statusUpdatedAt: req.statusUpdatedAt,
       })),

@@ -101,6 +101,12 @@ export default function Navbar() {
                 >
                   Vendor Directory
                 </Link>
+                <Link
+                  to="/messages"
+                  className={isActive("/messages") ? "active" : ""}
+                >
+                  My Messages
+                </Link>
               </>
             )}
             <Link
@@ -245,6 +251,15 @@ export default function Navbar() {
         >
           Vendors
         </Link>
+        {!isAdmin && (
+          <Link
+            to="/messages"
+            onClick={() => setMobileOpen(false)}
+            className={isActive("/messages") ? "active" : ""}
+          >
+            My Messages
+          </Link>
+        )}
         <Link
           to="/contact"
           onClick={() => setMobileOpen(false)}

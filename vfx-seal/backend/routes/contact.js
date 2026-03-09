@@ -1,5 +1,6 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
 const { protect, requireAdmin } = require("../middleware/auth");
 const ContactMessage = require("../models/ContactMessage");
 const Notification = require("../models/Notification");
@@ -44,6 +45,25 @@ function sanitize(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;");
+}
+
+// Optional auth helper for public contact form:
+// if a valid JWT is provided, link the message to the studio account.
+async function getOptionalUser(req) {
+  try {
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) return null;
+    const token = authHeader.split(" ")[1];
+    if (!token) return null;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select(
+      "_id name email role status company",
+    );
+    return user || null;
+  } catch {
+    return null;
+  }
 }
 
 // ── PUBLIC: POST /api/contact ── Anyone can send a contact message ──
@@ -94,9 +114,14 @@ router.post("/", async (req, res) => {
     const safeSubject = sanitize(subject);
     const safeMessage = sanitize(message.trim());
 
-    // Store in database (optional but useful)
+    // If caller is authenticated studio user, attach studioId for requester inbox flow
+    const optionalUser = await getOptionalUser(req);
+    const linkedStudioId =
+      optionalUser && optionalUser.role === "STUDIO" ? optionalUser._id : null;
+
+    // Store in database
     const contactMessage = await ContactMessage.create({
-      studioId: null,
+      studioId: linkedStudioId,
       studioName: safeName,
       studioEmail: safeEmail,
       subject: safeSubject,
@@ -164,6 +189,57 @@ router.post("/", async (req, res) => {
   } catch (error) {
     console.error("Contact message error:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
+  }
+});
+
+// ── STUDIO: GET /api/contact/my-messages ──
+// Returns the authenticated studio's own contact messages, including admin replies/status.
+router.get("/my-messages", protect, async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (user.role !== "STUDIO") {
+      return res
+        .status(403)
+        .json({ message: "Only studio users can view messages" });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page || "1", 10));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit || "20", 10)),
+    );
+    const skip = (page - 1) * limit;
+
+    const ownershipFilter = {
+      $or: [{ studioId: user._id }, { studioEmail: user.email }],
+    };
+
+    const [messages, totalCount] = await Promise.all([
+      ContactMessage.find(ownershipFilter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ContactMessage.countDocuments(ownershipFilter),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+
+    res.json({
+      messages,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Studio messages error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

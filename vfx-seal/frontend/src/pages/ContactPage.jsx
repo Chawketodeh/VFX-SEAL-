@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import api from "../api/client";
 import PublicNavbar from "../components/PublicNavbar";
-
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : "/api";
 
 export default function ContactPage() {
   const { isLoggedIn } = useAuth();
@@ -46,7 +42,7 @@ export default function ContactPage() {
 
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/contact`, form);
+      await api.post("/contact", form);
       setSuccess(true);
       setForm({ firstName: "", email: "", subject: "", message: "" });
     } catch (err) {

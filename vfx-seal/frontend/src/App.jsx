@@ -14,6 +14,7 @@ import VendorDetailPage from "./pages/VendorDetailPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVendorForm from "./pages/AdminVendorForm";
 import ContactPage from "./pages/ContactPage";
+import MyMessagesPage from "./pages/MyMessagesPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 
@@ -52,7 +53,7 @@ export default function App() {
     <>
       {/* ScrollToTop component for handling route navigation scroll behavior */}
       <ScrollToTop />
-      
+
       {/* Vanta.NET animated background */}
       <VantaNetBackground />
 
@@ -137,6 +138,14 @@ export default function App() {
           element={
             <ProtectedRoute requireApproval>
               <VendorDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute requireApproval>
+              <MyMessagesPage />
             </ProtectedRoute>
           }
         />
