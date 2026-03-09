@@ -35,6 +35,7 @@ export default function PublicNavbar() {
           <Link to="/login" className="btn btn-outline btn-sm">
             Sign In
           </Link>
+          {"  "}
           <Link to="/register" className="btn btn-primary btn-sm">
             Join the Club
           </Link>

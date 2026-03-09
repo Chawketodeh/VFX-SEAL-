@@ -163,15 +163,17 @@ export default function HomePage() {
       <section className="vendor-showcase-section">
         <div className="container">
           <div className="showcase-header">
-            <span className="section-tag">Preview</span>
-            <h2 className="section-title">Discover Top-Rated VFX Studios</h2>
+            <span className="section-tag">Exclusive Preview</span>
+            <h2 className="section-title">
+              Preview Our Certified Vendor Network
+            </h2>
             <p className="section-subtitle">
-              Get a glimpse of the certified vendors in our exclusive network
+              Get a glimpse of the industry's most trusted VFX partners
             </p>
           </div>
 
           <div className="vendor-showcase-grid">
-            <div className="showcase-vendor-card">
+            <div className="showcase-vendor-card locked-preview">
               <div className="vendor-showcase-header">
                 <div className="vendor-showcase-logo">IL</div>
                 <div className="vendor-showcase-info">
@@ -186,15 +188,22 @@ export default function HomePage() {
               <div className="vendor-showcase-services">
                 <span className="service-tag">VFX Supervision</span>
                 <span className="service-tag">Compositing</span>
-                <span className="service-tag">3D Animation</span>
+                <span className="service-tag blurred">3D Animation</span>
+              </div>
+              <div className="vendor-locked-details">
+                <div className="locked-content">
+                  <div className="locked-item">Portfolio Details</div>
+                  <div className="locked-item">Contact Information</div>
+                  <div className="locked-item">Pricing Structure</div>
+                </div>
               </div>
             </div>
 
-            <div className="showcase-vendor-card">
+            <div className="showcase-vendor-card locked-preview">
               <div className="vendor-showcase-header">
                 <div className="vendor-showcase-logo">DN</div>
                 <div className="vendor-showcase-info">
-                  <h3>Double Negative</h3>
+                  <h3>DNEG</h3>
                   <span className="vendor-location">London, UK</span>
                 </div>
                 <div className="voe-score-badge gold">
@@ -204,16 +213,23 @@ export default function HomePage() {
               </div>
               <div className="vendor-showcase-services">
                 <span className="service-tag">Environment VFX</span>
-                <span className="service-tag">Creature Work</span>
-                <span className="service-tag">Matte Painting</span>
+                <span className="service-tag blurred">Creature Work</span>
+                <span className="service-tag blurred">Matte Painting</span>
+              </div>
+              <div className="vendor-locked-details">
+                <div className="locked-content">
+                  <div className="locked-item">Recent Projects</div>
+                  <div className="locked-item">Team Capacity</div>
+                  <div className="locked-item">Availability Status</div>
+                </div>
               </div>
             </div>
 
-            <div className="showcase-vendor-card">
+            <div className="showcase-vendor-card locked-preview">
               <div className="vendor-showcase-header">
                 <div className="vendor-showcase-logo">WE</div>
                 <div className="vendor-showcase-info">
-                  <h3>Weta Digital</h3>
+                  <h3>Wētā FX</h3>
                   <span className="vendor-location">Wellington, NZ</span>
                 </div>
                 <div className="voe-score-badge gold">
@@ -223,40 +239,38 @@ export default function HomePage() {
               </div>
               <div className="vendor-showcase-services">
                 <span className="service-tag">Motion Capture</span>
-                <span className="service-tag">Digital Humans</span>
-                <span className="service-tag">Real-time VFX</span>
+                <span className="service-tag blurred">Digital Humans</span>
+                <span className="service-tag blurred">Real-time VFX</span>
               </div>
-            </div>
-
-            <div className="showcase-vendor-card">
-              <div className="vendor-showcase-header">
-                <div className="vendor-showcase-logo">FR</div>
-                <div className="vendor-showcase-info">
-                  <h3>Framestore</h3>
-                  <span className="vendor-location">London, UK</span>
+              <div className="vendor-locked-details">
+                <div className="locked-content">
+                  <div className="locked-item">Pipeline Details</div>
+                  <div className="locked-item">Technical Specs</div>
+                  <div className="locked-item">Partnership Terms</div>
                 </div>
-                <div className="voe-score-badge silver">
-                  <span className="score">8.7</span>
-                  <span className="max">/10</span>
-                </div>
-              </div>
-              <div className="vendor-showcase-services">
-                <span className="service-tag">Character Animation</span>
-                <span className="service-tag">Virtual Production</span>
-                <span className="service-tag">Post-Production</span>
               </div>
             </div>
           </div>
 
-          <div className="showcase-cta">
-            <div className="showcase-blur-overlay">
-              <div className="showcase-unlock-message">
-                <h3>Join The Seal to Access Full Network</h3>
-                <p>Get verified access to certified VFX vendors worldwide</p>
-                <Link to={getStartedLink} className="btn btn-primary btn-lg">
-                  {isLoggedIn ? "Browse All Vendors" : "Request Access"}
+          <div className="showcase-unlock-cta">
+            <div className="unlock-content">
+              <h3 className="unlock-title">Unlock the Full Vendor Directory</h3>
+              <p className="unlock-description">
+                Access certified VFX vendors, trusted partners, operational
+                scores, and exclusive directory insights reserved for approved
+                members.
+              </p>
+              <div className="unlock-actions">
+                <Link to="/register" className="btn btn-primary-gold btn-lg">
+                  Join the Club
+                </Link>
+                <Link to="/login" className="btn btn-outline-premium btn-lg">
+                  Sign In
                 </Link>
               </div>
+              <p className="unlock-exclusivity">
+                🔒 Exclusive access for approved studios and partners
+              </p>
             </div>
           </div>
         </div>

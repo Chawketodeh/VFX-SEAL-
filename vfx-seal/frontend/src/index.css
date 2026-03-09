@@ -3176,6 +3176,167 @@ h4 { font-size: 1.125rem; }
   margin-bottom: var(--space-lg);
 }
 
+/* Locked Preview Effects */
+.showcase-vendor-card.locked-preview {
+  position: relative;
+}
+
+.showcase-vendor-card.locked-preview .service-tag.blurred {
+  filter: blur(3px);
+  opacity: 0.5;
+  position: relative;
+}
+
+.vendor-locked-details {
+  margin-top: var(--space-md);
+  padding: var(--space-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+}
+
+.locked-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.locked-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  position: relative;
+}
+
+.locked-item::before {
+  content: '🔒';
+  margin-right: var(--space-xs);
+  opacity: 0.7;
+}
+
+.locked-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--text-muted), transparent);
+  opacity: 0.3;
+}
+
+/* Premium Unlock CTA Section */
+.showcase-unlock-cta {
+  margin-top: var(--space-3xl);
+  text-align: center;
+  position: relative;
+}
+
+.unlock-content {
+  background: linear-gradient(135deg, 
+    rgba(201, 163, 79, 0.08) 0%, 
+    rgba(14, 18, 26, 0.95) 25%,
+    rgba(14, 18, 26, 0.95) 75%,
+    rgba(201, 163, 79, 0.08) 100%);
+  border: 1px solid rgba(201, 163, 79, 0.2);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3xl) var(--space-2xl);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.unlock-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(201, 163, 79, 0.8), 
+    rgba(201, 163, 79, 1), 
+    rgba(201, 163, 79, 0.8), 
+    transparent);
+}
+
+.unlock-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--space-sm);
+}
+
+.unlock-description {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto var(--space-xl);
+}
+
+.unlock-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.unlock-exclusivity {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Premium Gold Button */
+.btn-primary-gold {
+  background: linear-gradient(135deg, 
+    rgba(201, 163, 79, 1) 0%, 
+    rgba(255, 215, 0, 0.9) 50%, 
+    rgba(201, 163, 79, 1) 100%);
+  color: #000;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(201, 163, 79, 0.3);
+  transition: all var(--transition-normal);
+}
+
+.btn-primary-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(201, 163, 79, 0.4);
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 1) 0%, 
+    rgba(201, 163, 79, 0.9) 50%, 
+    rgba(255, 215, 0, 1) 100%);
+}
+
+/* Premium Outline Button */
+.btn-outline-premium {
+  background: transparent;
+  border: 2px solid rgba(201, 163, 79, 0.6);
+  color: var(--accent);
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.btn-outline-premium:hover {
+  background: rgba(201, 163, 79, 0.1);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(201, 163, 79, 0.2);
+}
+
 .hero-card-stack {
   position: relative;
   width: 300px;
@@ -3822,6 +3983,43 @@ h4 { font-size: 1.125rem; }
 
   .vendor-showcase-info h3 {
     font-size: 1rem;
+  }
+
+  /* Locked preview mobile adjustments */
+  .showcase-unlock-cta {
+    margin-top: var(--space-2xl);
+  }
+
+  .unlock-content {
+    padding: var(--space-2xl) var(--space-md);
+  }
+
+  .unlock-title {
+    font-size: 1.25rem;
+  }
+
+  .unlock-description {
+    font-size: 0.9rem;
+  }
+
+  .unlock-actions {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .btn-primary-gold,
+  .btn-outline-premium {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .vendor-locked-details {
+    margin-top: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  .locked-item {
+    font-size: 0.7rem;
   }
 
   .trust-grid {
