@@ -202,8 +202,20 @@ router.get("/summaries", protect, requireApproved, async (req, res) => {
 
     // If specific vendor IDs provided, filter by them
     if (vendorIds) {
-      const ids = vendorIds.split(",").map((id) => mongoose.Types.ObjectId(id));
-      matchStage.vendorId = { $in: ids };
+      try {
+        const ids = vendorIds
+          .split(",")
+          .map((id) => id.trim())
+          .filter((id) => mongoose.Types.ObjectId.isValid(id))
+          .map((id) => new mongoose.Types.ObjectId(id));
+
+        if (ids.length > 0) {
+          matchStage.vendorId = { $in: ids };
+        }
+      } catch (error) {
+        console.error("Error parsing vendor IDs:", error);
+        // Continue without filtering if parsing fails
+      }
     }
 
     const summaries = await Feedback.aggregate([

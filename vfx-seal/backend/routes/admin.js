@@ -155,4 +155,78 @@ router.get("/stats", async (req, res) => {
   }
 });
 
+// PUT /api/admin/users/:id — update studio profile
+router.put("/users/:id", async (req, res) => {
+  try {
+    const { name, email, company, country, roleInCompany, linkedin, status } =
+      req.body;
+
+    // Find the studio user
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent modifying admin users
+    if (user.role === "ADMIN") {
+      return res.status(400).json({ message: "Cannot modify admin users" });
+    }
+
+    // Validate inputs
+    if (!name || name.trim().length < 1) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+
+    if (!company || company.trim().length < 1) {
+      return res.status(400).json({ message: "Company is required" });
+    }
+
+    if (!country || country.trim().length < 1) {
+      return res.status(400).json({ message: "Country is required" });
+    }
+
+    // Check if email is already taken by another user
+    if (email !== user.email) {
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: user._id },
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
+
+    // Validate status if provided
+    if (
+      status &&
+      !["PENDING", "APPROVED", "REJECTED", "BLOCKED"].includes(status)
+    ) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    // Update user fields
+    user.name = name.trim();
+    user.email = email.toLowerCase().trim();
+    user.company = company.trim();
+    user.country = country.trim();
+    if (roleInCompany) user.roleInCompany = roleInCompany.trim();
+    if (linkedin !== undefined) user.linkedin = linkedin.trim();
+    if (status) user.status = status;
+
+    await user.save();
+
+    res.json({
+      message: "Studio profile updated successfully",
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    console.error("Update studio profile error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;

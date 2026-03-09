@@ -218,4 +218,89 @@ router.get("/me", protect, async (req, res) => {
   res.json({ user: req.user });
 });
 
+// PUT /api/auth/profile — update current user profile
+router.put("/profile", protect, async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      company,
+      country,
+      roleInCompany,
+      linkedin,
+      currentPassword,
+      newPassword,
+    } = req.body;
+
+    // Find the current user
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Validate inputs
+    if (!name || name.trim().length < 1) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+
+    // Check if email is already taken by another user
+    if (email !== user.email) {
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: user._id },
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
+
+    // If changing password, validate current password
+    if (newPassword) {
+      if (!currentPassword) {
+        return res
+          .status(400)
+          .json({ message: "Current password required to set new password" });
+      }
+
+      const isCurrentPasswordValid =
+        await user.comparePassword(currentPassword);
+      if (!isCurrentPasswordValid) {
+        return res
+          .status(400)
+          .json({ message: "Current password is incorrect" });
+      }
+
+      if (newPassword.length < 6) {
+        return res
+          .status(400)
+          .json({ message: "New password must be at least 6 characters" });
+      }
+
+      user.passwordHash = newPassword; // Will be hashed by pre-save middleware
+    }
+
+    // Update user fields
+    user.name = name.trim();
+    user.email = email.toLowerCase().trim();
+    if (company) user.company = company.trim();
+    if (country) user.country = country.trim();
+    if (roleInCompany) user.roleInCompany = roleInCompany.trim();
+    if (linkedin !== undefined) user.linkedin = linkedin.trim();
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;

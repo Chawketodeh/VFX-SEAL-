@@ -13,8 +13,10 @@ import {
   FiX,
   FiSlash,
   FiTrash2,
+  FiEdit,
 } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
+import EditStudioModal from "../components/EditStudioModal";
 
 const BADGE_ICONS = {
   Gold: <FaTrophy className="badge-icon gold" />,
@@ -38,6 +40,8 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState(null);
   const [rejectNote, setRejectNote] = useState({});
   const [replyText, setReplyText] = useState({});
+  const [editStudioModalOpen, setEditStudioModalOpen] = useState(false);
+  const [selectedStudio, setSelectedStudio] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -140,6 +144,21 @@ export default function AdminDashboard() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleEditStudio = (studio) => {
+    setSelectedStudio(studio);
+    setEditStudioModalOpen(true);
+  };
+
+  const handleStudioUpdate = (updatedStudio) => {
+    setUsers(
+      users.map((user) =>
+        user._id === updatedStudio._id ? updatedStudio : user,
+      ),
+    );
+    setEditStudioModalOpen(false);
+    setSelectedStudio(null);
   };
 
   const handleDeleteMessage = async (messageId) => {
@@ -470,7 +489,16 @@ export default function AdminDashboard() {
                                   Re-Approve
                                 </button>
                               )}
-                              {/* Always available delete button */}
+                              {/* Always available edit and delete buttons */}
+                              <button
+                                className="btn btn-info btn-sm"
+                                onClick={() => handleEditStudio(user)}
+                                id={`edit-user-${user._id}`}
+                                title="Edit Studio Profile"
+                              >
+                                <FiEdit className="button-icon" />
+                                Edit
+                              </button>
                               <button
                                 className="btn btn-danger btn-sm"
                                 onClick={() => handleDeleteUser(user._id)}
@@ -859,6 +887,17 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Edit Studio Modal */}
+      <EditStudioModal
+        isOpen={editStudioModalOpen}
+        onClose={() => {
+          setEditStudioModalOpen(false);
+          setSelectedStudio(null);
+        }}
+        studio={selectedStudio}
+        onStudioUpdate={handleStudioUpdate}
+      />
     </div>
   );
 }

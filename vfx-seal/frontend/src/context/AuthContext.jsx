@@ -71,6 +71,11 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateProfile = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("vfxseal_user", JSON.stringify(updatedUser));
+  };
+
   const isAdmin = user?.role === "ADMIN";
   const isApproved = user?.status === "APPROVED";
   const isLoggedIn = !!token;
@@ -87,6 +92,7 @@ export function AuthProvider({ children }) {
         resetPassword,
         logout,
         refreshUser,
+        updateProfile,
         isAdmin,
         isApproved,
         isLoggedIn,

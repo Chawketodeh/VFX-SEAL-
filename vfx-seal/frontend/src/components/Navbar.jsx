@@ -2,16 +2,18 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
-import { FiBell } from "react-icons/fi";
+import { FiBell, FiSettings } from "react-icons/fi";
+import EditProfileModal from "./EditProfileModal";
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, updateProfile } = useAuth();
   const { notifications, unreadCount, markAllRead, markRead } =
     useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const notifRef = useRef(null);
 
   const handleLogout = () => {
@@ -170,13 +172,24 @@ export default function Navbar() {
                 {isAdmin ? "Administrator" : user?.company}
               </div>
             </div>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleLogout}
-              id="logout-btn"
-            >
-              Logout
-            </button>
+            <div className="navbar-actions">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditProfileOpen(true)}
+                id="edit-profile-btn"
+                title="Edit Profile"
+              >
+                <FiSettings className="button-icon" />
+                Edit Profile
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleLogout}
+                id="logout-btn"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
           <button
@@ -250,6 +263,14 @@ export default function Navbar() {
           Logout
         </a>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+        user={user}
+        onProfileUpdate={updateProfile}
+      />
     </>
   );
 }
