@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import PublicNavbar from "../components/PublicNavbar";
 import sealLogo from "../assets/seal.png";
 import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
@@ -21,6 +22,9 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
+      {/* Public Navbar for non-logged-in users */}
+      {!isLoggedIn && <PublicNavbar />}
+
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-particles">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
+import PublicNavbar from "../components/PublicNavbar";
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
@@ -63,30 +64,7 @@ export default function ContactPage() {
   return (
     <div className="contact-page">
       {/* Public Navbar for non-logged-in users */}
-      {!isLoggedIn && (
-        <nav className="navbar" id="contact-navbar">
-          <div className="navbar-inner">
-            <Link to="/" className="navbar-brand">
-              VFX <span className="accent">Seal</span>
-            </Link>
-            <div className="navbar-links">
-              <Link to="/">Home</Link>
-              <Link to="/contact" className="active">
-                Contact
-              </Link>
-            </div>
-            <div className="navbar-actions-public">
-              <Link to="/register" className="btn btn-primary btn-sm">
-                Join the Club
-              </Link>{" "}
-              {""}
-              <Link to="/login" className="btn btn-outline btn-sm">
-                Login
-              </Link>
-            </div>
-          </div>
-        </nav>
-      )}
+      {!isLoggedIn && <PublicNavbar />}
 
       <div className="page-wrapper">
         <div className="container">
