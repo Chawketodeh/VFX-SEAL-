@@ -64,7 +64,38 @@ export default function Navbar() {
   };
 
   const getNotificationLink = (notification) => {
-    if (notification?.link) return notification.link;
+    const relatedId = notification?.relatedId;
+    const link =
+      typeof notification?.link === "string" ? notification.link : "";
+    const genericAdmin =
+      link === "/admin" || link === "/admin/" || link === "/admin?";
+
+    if (isAdmin && relatedId) {
+      if (
+        (notification?.type === "NEW_CONTACT" ||
+          notification?.type === "CONTACT_REPLY") &&
+        (genericAdmin ||
+          (link.startsWith("/admin") && !link.includes("messageId=")))
+      ) {
+        return `/admin?tab=messages&messageId=${relatedId}`;
+      }
+
+      if (
+        [
+          "NEW_FEEDBACK",
+          "FLAGGED_FEEDBACK",
+          "FEEDBACK_APPROVED",
+          "FEEDBACK_REJECTED",
+          "FEEDBACK_REMOVED",
+        ].includes(notification?.type) &&
+        (genericAdmin ||
+          (link.startsWith("/admin") && !link.includes("feedbackId=")))
+      ) {
+        return `/admin?tab=feedbacks&feedbackId=${relatedId}`;
+      }
+    }
+
+    if (link) return link;
 
     switch (notification?.type) {
       case "CONTACT_REPLY":

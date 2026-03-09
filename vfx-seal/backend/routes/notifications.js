@@ -4,24 +4,76 @@ const { protect } = require("../middleware/auth");
 const router = express.Router();
 
 function resolveNotificationLink(notification, user) {
-  if (notification.link && typeof notification.link === "string") {
-    return notification.link;
+  const relatedId = notification.relatedId?.toString?.() || "";
+  const rawLink =
+    typeof notification.link === "string" ? notification.link.trim() : "";
+  const isGenericAdminLink =
+    rawLink === "/admin" || rawLink === "/admin/" || rawLink === "/admin?";
+
+  if (rawLink) {
+    if (user?.role === "ADMIN" && relatedId) {
+      const isMessageNotif =
+        notification.type === "NEW_CONTACT" ||
+        notification.type === "CONTACT_REPLY";
+      const isFeedbackNotif =
+        notification.type === "NEW_FEEDBACK" ||
+        notification.type === "FLAGGED_FEEDBACK" ||
+        notification.type === "FEEDBACK_APPROVED" ||
+        notification.type === "FEEDBACK_REJECTED" ||
+        notification.type === "FEEDBACK_REMOVED";
+
+      if (
+        isMessageNotif &&
+        (isGenericAdminLink ||
+          (rawLink.startsWith("/admin") && !rawLink.includes("messageId=")))
+      ) {
+        return `/admin?tab=messages&messageId=${relatedId}`;
+      }
+
+      if (
+        isFeedbackNotif &&
+        (isGenericAdminLink ||
+          (rawLink.startsWith("/admin") && !rawLink.includes("feedbackId=")))
+      ) {
+        return `/admin?tab=feedbacks&feedbackId=${relatedId}`;
+      }
+    }
+
+    return rawLink;
   }
 
   switch (notification.type) {
     case "CONTACT_REPLY":
-      return "/messages";
+      return relatedId ? `/messages?messageId=${relatedId}` : "/messages";
     case "NEW_CONTACT":
-      return user?.role === "ADMIN" ? "/admin" : "/messages";
+      if (user?.role === "ADMIN") {
+        return relatedId
+          ? `/admin?tab=messages&messageId=${relatedId}`
+          : "/admin?tab=messages";
+      }
+      return relatedId ? `/messages?messageId=${relatedId}` : "/messages";
+    case "FLAGGED_FEEDBACK":
     case "FEEDBACK_APPROVED":
     case "FEEDBACK_REJECTED":
+    case "FEEDBACK_REMOVED":
+      if (user?.role === "ADMIN") {
+        return relatedId
+          ? `/admin?tab=feedbacks&feedbackId=${relatedId}`
+          : "/admin?tab=feedbacks";
+      }
       return "/vendors";
     case "NEW_FEEDBACK":
-      return user?.role === "ADMIN" ? "/admin" : "/vendors";
+      if (user?.role === "ADMIN") {
+        return relatedId
+          ? `/admin?tab=feedbacks&feedbackId=${relatedId}`
+          : "/admin?tab=feedbacks";
+      }
+      return "/vendors";
     case "AUDIT_REQUEST_UPDATE":
     case "VENDOR_VERIFICATION_UPDATE":
       return "/messages";
     case "SYSTEM":
+      return relatedId ? `/messages?messageId=${relatedId}` : "/messages";
     default:
       return user?.role === "ADMIN" ? "/admin" : "/";
   }

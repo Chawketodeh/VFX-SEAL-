@@ -4589,6 +4589,11 @@ input[type="checkbox"]:checked + .checkmark::after {
   border-color: var(--glass-border-hover);
 }
 
+.admin-item-highlight {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px rgba(246, 231, 192, 0.35), 0 0 20px rgba(246, 231, 192, 0.15);
+}
+
 .admin-message-selectable:hover {
   transform: translateY(-1px);
 }
@@ -4750,6 +4755,33 @@ input[type="checkbox"]:checked + .checkmark::after {
   border-radius: var(--radius-md);
   padding: var(--space-xs);
   margin-bottom: var(--space-md);
+}
+
+.compose-recipient-select-all {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: var(--space-xs);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.compose-recipient-select-all:hover {
+  background: var(--bg-card-hover);
+  border-radius: var(--radius-sm);
+}
+
+.compose-recipient-select-all input {
+  margin-top: 0;
+}
+
+.compose-recipient-count {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.84rem;
 }
 
 .compose-recipient-item {

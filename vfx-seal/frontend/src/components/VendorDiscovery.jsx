@@ -225,7 +225,7 @@ export default function VendorDiscovery() {
                 vendors={vendors}
                 category={`region-${region.toLowerCase().replace(" ", "-")}`}
               />
-            ))}}
+            ))}
         </div>
       </div>
     </section>

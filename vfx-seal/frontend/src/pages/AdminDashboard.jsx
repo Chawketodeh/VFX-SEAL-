@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/client";
 import {
   FiAward,
@@ -27,6 +27,7 @@ const BADGE_ICONS = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("studios");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -38,10 +39,13 @@ export default function AdminDashboard() {
   const [feedbackFilter, setFeedbackFilter] = useState("PENDING");
   const [messageFilter, setMessageFilter] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState("");
+  const [highlightedFeedbackId, setHighlightedFeedbackId] = useState("");
   const [composeOpen, setComposeOpen] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState("");
   const [recipients, setRecipients] = useState([]);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState([]);
+  const selectAllRecipientsRef = useRef(null);
   const [composeForm, setComposeForm] = useState({ subject: "", message: "" });
   const [actionLoading, setActionLoading] = useState(null);
   const [rejectNote, setRejectNote] = useState({});
@@ -52,6 +56,31 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
   }, [activeTab]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    const messageId = params.get("messageId");
+    const feedbackId = params.get("feedbackId");
+
+    if (tab && ["studios", "vendors", "feedbacks", "messages"].includes(tab)) {
+      setActiveTab(tab);
+    } else if (messageId) {
+      setActiveTab("messages");
+    } else if (feedbackId) {
+      setActiveTab("feedbacks");
+    }
+
+    if (messageId) {
+      setMessageFilter("");
+      setHighlightedMessageId(messageId);
+    }
+
+    if (feedbackId) {
+      setFeedbackFilter("ALL");
+      setHighlightedFeedbackId(feedbackId);
+    }
+  }, [location.search]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -136,6 +165,50 @@ export default function AdminDashboard() {
       fetchMessages();
     }
   }, [messageFilter]);
+
+  useEffect(() => {
+    if (
+      activeTab !== "messages" ||
+      !highlightedMessageId ||
+      messages.length === 0
+    ) {
+      return;
+    }
+
+    const match = messages.find((item) => item._id === highlightedMessageId);
+    if (match) {
+      setSelectedMessage(match);
+      const element = document.getElementById(
+        `admin-message-${highlightedMessageId}`,
+      );
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    const timer = setTimeout(() => setHighlightedMessageId(""), 3500);
+    return () => clearTimeout(timer);
+  }, [activeTab, highlightedMessageId, messages]);
+
+  useEffect(() => {
+    if (
+      activeTab !== "feedbacks" ||
+      !highlightedFeedbackId ||
+      feedbacks.length === 0
+    ) {
+      return;
+    }
+
+    const element = document.getElementById(
+      `admin-feedback-${highlightedFeedbackId}`,
+    );
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    const timer = setTimeout(() => setHighlightedFeedbackId(""), 3500);
+    return () => clearTimeout(timer);
+  }, [activeTab, highlightedFeedbackId, feedbacks]);
 
   useEffect(() => {
     if (activeTab === "messages" && composeOpen) {
@@ -225,6 +298,36 @@ export default function AdminDashboard() {
         ? prev.filter((id) => id !== userId)
         : [...prev, userId],
     );
+  };
+
+  const visibleRecipientIds = recipients.map((recipient) => recipient._id);
+  const selectedVisibleCount = visibleRecipientIds.filter((id) =>
+    selectedRecipientIds.includes(id),
+  ).length;
+  const allVisibleSelected =
+    visibleRecipientIds.length > 0 &&
+    selectedVisibleCount === visibleRecipientIds.length;
+  const someVisibleSelected =
+    selectedVisibleCount > 0 &&
+    selectedVisibleCount < visibleRecipientIds.length;
+
+  useEffect(() => {
+    if (selectAllRecipientsRef.current) {
+      selectAllRecipientsRef.current.indeterminate = someVisibleSelected;
+    }
+  }, [someVisibleSelected, recipients, selectedRecipientIds]);
+
+  const handleToggleSelectAllRecipients = () => {
+    if (visibleRecipientIds.length === 0) return;
+
+    setSelectedRecipientIds((prev) => {
+      if (allVisibleSelected) {
+        return prev.filter((id) => !visibleRecipientIds.includes(id));
+      }
+
+      const merged = new Set([...prev, ...visibleRecipientIds]);
+      return Array.from(merged);
+    });
   };
 
   const handleSendNewMessage = async () => {
@@ -742,8 +845,9 @@ export default function AdminDashboard() {
               <div className="admin-feedback-list">
                 {feedbacks.map((fb) => (
                   <div
-                    className={`admin-feedback-card ${fb.isFlagged ? "admin-feedback-flagged" : ""}`}
+                    className={`admin-feedback-card ${fb.isFlagged ? "admin-feedback-flagged" : ""} ${highlightedFeedbackId === fb._id ? "admin-item-highlight" : ""}`}
                     key={fb._id}
+                    id={`admin-feedback-${fb._id}`}
                   >
                     <div className="admin-feedback-header">
                       <div>
@@ -891,9 +995,10 @@ export default function AdminDashboard() {
                   {messages.map((msg) => (
                     <button
                       type="button"
-                      className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""}`}
+                      className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
                       key={msg._id}
                       onClick={() => setSelectedMessage(msg)}
+                      id={`admin-message-${msg._id}`}
                     >
                       <div className="admin-message-header">
                         <div>
@@ -1057,6 +1162,21 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="compose-recipient-list">
+                      <label className="compose-recipient-select-all">
+                        <input
+                          ref={selectAllRecipientsRef}
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          onChange={handleToggleSelectAllRecipients}
+                        />
+                        <span>
+                          Select All Recipients{" "}
+                          <span className="compose-recipient-count">
+                            ({visibleRecipientIds.length} visible)
+                          </span>
+                        </span>
+                      </label>
+
                       {recipients.length === 0 ? (
                         <div className="messages-empty">
                           No recipients found.

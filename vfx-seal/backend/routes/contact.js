@@ -178,7 +178,7 @@ router.post("/", async (req, res) => {
           title: "New Contact Message",
           message: `${safeName} (${safeEmail}): "${safeSubject}"`,
           relatedId: contactMessage._id,
-          link: "/admin",
+          link: `/admin?tab=messages&messageId=${contactMessage._id}`,
         });
         const io = req.app.get("io");
         if (io) {
@@ -360,7 +360,7 @@ router.post("/admin/send", protect, requireAdmin, async (req, res) => {
           title: "New Message from Admin",
           message: `${msg.subject}`,
           relatedId: msg._id,
-          link: "/messages",
+          link: `/messages?messageId=${msg._id}`,
         });
 
         const io = req.app.get("io");
@@ -426,7 +426,7 @@ router.post("/admin/reply/:id", protect, requireAdmin, async (req, res) => {
         title: "Admin Reply",
         message: `You have a response to "${contactMessage.subject}"`,
         relatedId: contactMessage._id,
-        link: "/messages",
+        link: `/messages?messageId=${contactMessage._id}`,
       });
       const io = req.app.get("io");
       if (io) {

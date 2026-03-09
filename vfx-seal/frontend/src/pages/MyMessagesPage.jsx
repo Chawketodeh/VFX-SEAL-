@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { FiInbox, FiMessageSquare, FiFileText } from "react-icons/fi";
 
@@ -8,10 +9,20 @@ function formatDate(value) {
 }
 
 export default function MyMessagesPage() {
+  const location = useLocation();
   const [contactMessages, setContactMessages] = useState([]);
   const [auditRequests, setAuditRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [highlightedMessageId, setHighlightedMessageId] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const messageId = params.get("messageId");
+    if (messageId) {
+      setHighlightedMessageId(messageId);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const fetchInbox = async () => {
@@ -78,6 +89,20 @@ export default function MyMessagesPage() {
     fetchInbox();
   }, []);
 
+  useEffect(() => {
+    if (!highlightedMessageId || contactMessages.length === 0) return;
+
+    const element = document.getElementById(
+      `user-message-${highlightedMessageId}`,
+    );
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    const timer = setTimeout(() => setHighlightedMessageId(""), 3500);
+    return () => clearTimeout(timer);
+  }, [highlightedMessageId, contactMessages]);
+
   const totalItems = useMemo(
     () => contactMessages.length + auditRequests.length,
     [contactMessages.length, auditRequests.length],
@@ -129,7 +154,11 @@ export default function MyMessagesPage() {
               ) : (
                 <div className="admin-messages-list">
                   {contactMessages.map((msg) => (
-                    <article className="admin-message-card" key={msg._id}>
+                    <article
+                      className={`admin-message-card ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                      key={msg._id}
+                      id={`user-message-${msg._id}`}
+                    >
                       <div className="admin-message-header">
                         <div>
                           <div className="admin-message-studio">

@@ -85,6 +85,7 @@ router.post("/", protect, requireApproved, async (req, res) => {
         title: notificationTitle,
         message: notificationMessage,
         relatedId: feedback._id,
+        link: `/admin?tab=feedbacks&feedbackId=${feedback._id}`,
       });
 
       // Emit socket event
@@ -300,6 +301,7 @@ router.patch("/:id/approve", protect, async (req, res) => {
       title: "Feedback Approved",
       message: "Your feedback has been approved and is now visible publicly.",
       relatedId: feedback._id,
+      link: "/vendors",
     });
 
     const io = req.app.get("io");
@@ -342,6 +344,7 @@ router.patch("/:id/reject", protect, async (req, res) => {
         ? `Your feedback was rejected: "${req.body.adminNote}"`
         : "Your feedback was rejected by the admin.",
       relatedId: feedback._id,
+      link: "/vendors",
     });
 
     const io = req.app.get("io");
@@ -378,6 +381,7 @@ router.delete("/:id/delete", protect, async (req, res) => {
       title: "Feedback Removed",
       message: "Your feedback was removed for violating community guidelines.",
       relatedId: feedback._id,
+      link: "/vendors",
     });
 
     const io = req.app.get("io");
