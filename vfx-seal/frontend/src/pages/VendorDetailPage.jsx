@@ -10,6 +10,7 @@ const BADGE_ICONS = {
   Gold: <FaTrophy className="badge-icon gold" />,
   Silver: <FiAward className="badge-icon silver" />,
   Bronze: <FiCircle className="badge-icon bronze" />,
+  Blue: <FiCircle className="badge-icon blue" />,
   None: "—",
 };
 
@@ -19,6 +20,19 @@ export default function VendorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openSections, setOpenSections] = useState({});
+
+  // Enhanced badge logic with Blue for new studios
+  const getBadgeType = (vendor) => {
+    if (!vendor) return "None";
+
+    const currentYear = new Date().getFullYear();
+    const isNew = vendor.foundedYear && currentYear - vendor.foundedYear < 2;
+
+    if (isNew) return "Blue";
+    return vendor.badgeVOE || "None";
+  };
+
+  const badgeClass = (badge) => (badge || "none").toLowerCase();
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -68,7 +82,6 @@ export default function VendorDetailPage() {
     }
   };
 
-  const badgeClass = (badge) => (badge || "none").toLowerCase();
   const scorePercent = vendor ? (vendor.globalScore / 10) * 100 : 0;
 
   if (loading)
@@ -115,11 +128,13 @@ export default function VendorDetailPage() {
               <div className="vendor-detail-info">
                 <h1 className="vendor-detail-name">
                   {vendor.name}
-                  <span className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}>
+                  <span
+                    className={`voe-badge ${badgeClass(getBadgeType(vendor))}`}
+                  >
                     <span className="voe-badge-icon">
-                      {BADGE_ICONS[vendor.badgeVOE] || "—"}
+                      {BADGE_ICONS[getBadgeType(vendor)] || "—"}
                     </span>
-                    {vendor.badgeVOE}
+                    {getBadgeType(vendor)}
                   </span>
                 </h1>
                 <div className="vendor-detail-meta">

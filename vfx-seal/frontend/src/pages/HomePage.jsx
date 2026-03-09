@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PublicNavbar from "../components/PublicNavbar";
+import VendorDiscovery from "../components/VendorDiscovery";
 import sealLogo from "../assets/seal.png";
 import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
@@ -159,122 +160,130 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Vendor Showcase - Connected to Explore Step */}
-      <section className="vendor-showcase-section">
-        <div className="container">
-          <div className="showcase-header">
-            <span className="section-tag">Exclusive Preview</span>
-            <h2 className="section-title">
-              Preview Our Certified Vendor Network
-            </h2>
-            <p className="section-subtitle">
-              Get a glimpse of the industry's most trusted VFX partners
-            </p>
-          </div>
-
-          <div className="vendor-showcase-grid">
-            <div className="showcase-vendor-card locked-preview">
-              <div className="vendor-showcase-header">
-                <div className="vendor-showcase-logo">IL</div>
-                <div className="vendor-showcase-info">
-                  <h3>ILM Studios</h3>
-                  <span className="vendor-location">San Francisco, USA</span>
-                </div>
-                <div className="voe-score-badge gold">
-                  <span className="score">9.2</span>
-                  <span className="max">/10</span>
-                </div>
-              </div>
-              <div className="vendor-showcase-services">
-                <span className="service-tag">VFX Supervision</span>
-                <span className="service-tag">Compositing</span>
-                <span className="service-tag blurred">3D Animation</span>
-              </div>
-              <div className="vendor-locked-details">
-                <div className="locked-content">
-                  <div className="locked-item">Portfolio Details</div>
-                  <div className="locked-item">Contact Information</div>
-                  <div className="locked-item">Pricing Structure</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="showcase-vendor-card locked-preview">
-              <div className="vendor-showcase-header">
-                <div className="vendor-showcase-logo">DN</div>
-                <div className="vendor-showcase-info">
-                  <h3>DNEG</h3>
-                  <span className="vendor-location">London, UK</span>
-                </div>
-                <div className="voe-score-badge gold">
-                  <span className="score">8.9</span>
-                  <span className="max">/10</span>
-                </div>
-              </div>
-              <div className="vendor-showcase-services">
-                <span className="service-tag">Environment VFX</span>
-                <span className="service-tag blurred">Creature Work</span>
-                <span className="service-tag blurred">Matte Painting</span>
-              </div>
-              <div className="vendor-locked-details">
-                <div className="locked-content">
-                  <div className="locked-item">Recent Projects</div>
-                  <div className="locked-item">Team Capacity</div>
-                  <div className="locked-item">Availability Status</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="showcase-vendor-card locked-preview">
-              <div className="vendor-showcase-header">
-                <div className="vendor-showcase-logo">WE</div>
-                <div className="vendor-showcase-info">
-                  <h3>Wētā FX</h3>
-                  <span className="vendor-location">Wellington, NZ</span>
-                </div>
-                <div className="voe-score-badge gold">
-                  <span className="score">9.5</span>
-                  <span className="max">/10</span>
-                </div>
-              </div>
-              <div className="vendor-showcase-services">
-                <span className="service-tag">Motion Capture</span>
-                <span className="service-tag blurred">Digital Humans</span>
-                <span className="service-tag blurred">Real-time VFX</span>
-              </div>
-              <div className="vendor-locked-details">
-                <div className="locked-content">
-                  <div className="locked-item">Pipeline Details</div>
-                  <div className="locked-item">Technical Specs</div>
-                  <div className="locked-item">Partnership Terms</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="showcase-unlock-cta">
-            <div className="unlock-content">
-              <h3 className="unlock-title">Unlock the Full Vendor Directory</h3>
-              <p className="unlock-description">
-                Access certified VFX vendors, trusted partners, operational
-                scores, and exclusive directory insights reserved for approved
-                members.
-              </p>
-              <div className="unlock-actions">
-                <Link to="/register" className="btn btn-primary-gold btn-lg">
-                  Join the Club
-                </Link>
-                <Link to="/login" className="btn btn-outline-premium btn-lg">
-                  Sign In
-                </Link>
-              </div>
-              <p className="unlock-exclusivity">
-                🔒 Exclusive access for approved studios and partners
+      {/* Vendor Discovery Section - Netflix-style for logged in users */}
+      {isLoggedIn && isApproved ? (
+        <VendorDiscovery />
+      ) : (
+        /* Locked Preview Section for non-logged-in users */
+        <section className="vendor-showcase-section">
+          <div className="container">
+            <div className="showcase-header">
+              <span className="section-tag">Exclusive Preview</span>
+              <h2 className="section-title">
+                Preview Our Certified Vendor Network
+              </h2>
+              <p className="section-subtitle">
+                Get a glimpse of the industry's most trusted VFX partners
               </p>
             </div>
+
+            <div className="vendor-showcase-grid">
+              <div className="showcase-vendor-card locked-preview">
+                <div className="vendor-showcase-header">
+                  <div className="vendor-showcase-logo">IL</div>
+                  <div className="vendor-showcase-info">
+                    <h3>ILM Studios</h3>
+                    <span className="vendor-location">San Francisco, USA</span>
+                  </div>
+                  <div className="voe-score-badge gold">
+                    <span className="score">9.2</span>
+                    <span className="max">/10</span>
+                  </div>
+                </div>
+                <div className="vendor-showcase-services">
+                  <span className="service-tag">VFX Supervision</span>
+                  <span className="service-tag">Compositing</span>
+                  <span className="service-tag blurred">3D Animation</span>
+                </div>
+                <div className="vendor-locked-details">
+                  <div className="locked-content">
+                    <div className="locked-item">Portfolio Details</div>
+                    <div className="locked-item">Contact Information</div>
+                    <div className="locked-item">Pricing Structure</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="showcase-vendor-card locked-preview">
+                <div className="vendor-showcase-header">
+                  <div className="vendor-showcase-logo">DN</div>
+                  <div className="vendor-showcase-info">
+                    <h3>DNEG</h3>
+                    <span className="vendor-location">London, UK</span>
+                  </div>
+                  <div className="voe-score-badge gold">
+                    <span className="score">8.9</span>
+                    <span className="max">/10</span>
+                  </div>
+                </div>
+                <div className="vendor-showcase-services">
+                  <span className="service-tag">Environment VFX</span>
+                  <span className="service-tag blurred">Creature Work</span>
+                  <span className="service-tag blurred">Matte Painting</span>
+                </div>
+                <div className="vendor-locked-details">
+                  <div className="locked-content">
+                    <div className="locked-item">Recent Projects</div>
+                    <div className="locked-item">Team Capacity</div>
+                    <div className="locked-item">Availability Status</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="showcase-vendor-card locked-preview">
+                <div className="vendor-showcase-header">
+                  <div className="vendor-showcase-logo">WE</div>
+                  <div className="vendor-showcase-info">
+                    <h3>Wētā FX</h3>
+                    <span className="vendor-location">Wellington, NZ</span>
+                  </div>
+                  <div className="voe-score-badge gold">
+                    <span className="score">9.5</span>
+                    <span className="max">/10</span>
+                  </div>
+                </div>
+                <div className="vendor-showcase-services">
+                  <span className="service-tag">Motion Capture</span>
+                  <span className="service-tag blurred">Digital Humans</span>
+                  <span className="service-tag blurred">Real-time VFX</span>
+                </div>
+                <div className="vendor-locked-details">
+                  <div className="locked-content">
+                    <div className="locked-item">Pipeline Details</div>
+                    <div className="locked-item">Technical Specs</div>
+                    <div className="locked-item">Partnership Terms</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="showcase-unlock-cta">
+              <div className="unlock-content">
+                <h3 className="unlock-title">
+                  Unlock the Full Vendor Directory
+                </h3>
+                <p className="unlock-description">
+                  Access certified VFX vendors, trusted partners, operational
+                  scores, and exclusive directory insights reserved for approved
+                  members.
+                </p>
+                <div className="unlock-actions">
+                  <Link to="/register" className="btn btn-primary-gold btn-lg">
+                    Join the Club
+                  </Link>
+                  <Link to="/login" className="btn btn-outline-premium btn-lg">
+                    Sign In
+                  </Link>
+                </div>
+                <p className="unlock-exclusivity">
+                  🔒 Exclusive access for approved studios and partners
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
       {/* Assessor Network Section */}
       <AssessorsSection />
 

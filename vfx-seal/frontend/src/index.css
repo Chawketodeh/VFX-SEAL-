@@ -37,6 +37,8 @@
   --badge-silver-bg: rgba(192, 192, 192, 0.12);
   --badge-bronze: #CD7F32;
   --badge-bronze-bg: rgba(205, 127, 50, 0.12);
+  --badge-blue: #3B82F6;
+  --badge-blue-bg: rgba(59, 130, 246, 0.15);
   --badge-none: #64748b;
   --badge-none-bg: rgba(100, 116, 139, 0.12);
 
@@ -705,6 +707,12 @@ h4 { font-size: 1.125rem; }
   background: var(--badge-bronze-bg);
   color: var(--badge-bronze);
   border: 1px solid rgba(205, 127, 50, 0.25);
+}
+
+.voe-badge.blue {
+  background: var(--badge-blue-bg);
+  color: var(--badge-blue);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .voe-badge.none {
@@ -3337,10 +3345,410 @@ h4 { font-size: 1.125rem; }
   box-shadow: 0 4px 15px rgba(201, 163, 79, 0.2);
 }
 
-.hero-card-stack {
+/* ============================================
+   Netflix-Style Vendor Discovery Carousels
+   ============================================ */
+
+.vendor-discovery-section {
+  padding: var(--space-4xl) 0;
+  background: linear-gradient(180deg, 
+    rgba(14, 18, 26, 0.95) 0%, 
+    rgba(14, 18, 26, 0.98) 50%,
+    var(--bg-primary) 100%);
   position: relative;
+}
+
+.discovery-header {
+  text-align: center;
+  margin-bottom: var(--space-4xl);
+}
+
+.discovery-carousels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xl);
+}
+
+/* Individual Carousel Section */
+.vendor-carousel-section {
+  position: relative;
+}
+
+.carousel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding: 0 var(--space-md);
+}
+
+.carousel-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.carousel-navigation {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.carousel-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: 10;
+}
+
+.carousel-nav-btn:hover:not(.disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.carousel-nav-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Carousel Container & Track */
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+  margin: 0 calc(-1 * var(--space-md));
+  padding: 0 var(--space-md);
+}
+
+.carousel-track {
+  display: flex;
+  gap: var(--space-md);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: var(--space-xs);
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Vendor Card in Carousel */
+.carousel-vendor-card {
+  flex-shrink: 0;
   width: 300px;
-  height: 300px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.carousel-card-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.carousel-card-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.carousel-vendor-card:hover .carousel-card-inner {
+  transform: translateY(-6px);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-vendor-card:hover .carousel-card-inner::before {
+  opacity: 1;
+}
+
+/* Vendor Logo */
+.carousel-vendor-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+  position: relative;
+}
+
+.carousel-vendor-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent), #8b6914);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #000;
+}
+
+/* Vendor Info */
+.carousel-vendor-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.carousel-vendor-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.carousel-vendor-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.carousel-location,
+.carousel-team-size {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Score & Badge Container */
+.carousel-score-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: var(--space-sm) 0;
+}
+
+.carousel-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  min-width: 60px;
+}
+
+.carousel-score-badge.gold {
+  background: var(--badge-gold-bg);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.carousel-score-badge.silver {
+  background: var(--badge-silver-bg);
+  border: 1px solid rgba(192, 192, 192, 0.3);
+}
+
+.carousel-score-badge.bronze {
+  background: var(--badge-bronze-bg);
+  border: 1px solid rgba(205, 127, 50, 0.3);
+}
+
+.carousel-score-badge.blue {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.carousel-score-badge .score {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.carousel-score-badge .max {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Badge Display */
+.carousel-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.badge-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-icon {
+  font-size: 1rem;
+}
+
+.badge-icon.gold {
+  color: #ffd700;
+}
+
+.badge-icon.silver {
+  color: #c0c0c0;
+}
+
+.badge-icon.bronze {
+  color: #cd7f32;
+}
+
+.badge-icon.blue {
+  color: #3b82f6;
+}
+
+.badge-icon.blue {
+  color: #3b82f6;
+}
+
+.badge-text {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Services Tags */
+.carousel-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.carousel-service-tag {
+  padding: 3px 8px;
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.carousel-service-more {
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+/* Loading States */
+.carousel-loading {
+  padding: var(--space-2xl) 0;
+}
+
+.loading-carousel-skeleton {
+  margin-bottom: var(--space-2xl);
+}
+
+.loading-carousel-title {
+  height: 24px;
+  width: 200px;
+  background: var(--glass-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.loading-carousel-track {
+  display: flex;
+  gap: var(--space-md);
+  overflow: hidden;
+}
+
+.loading-carousel-card {
+  flex-shrink: 0;
+  width: 300px;
+  height: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Discovery Error State */
+.discovery-error {
+  text-align: center;
+  padding: var(--space-3xl);
+  color: var(--text-muted);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .carousel-container {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .carousel-track {
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+  
+  .carousel-vendor-card {
+    width: 280px;
+  }
+  
+  .carousel-header {
+    padding: 0;
+  }
+  
+  .carousel-navigation {
+    display: none; /* Hide navigation buttons on mobile, rely on touch scroll */
+  }
+  
+  .carousel-title {
+    font-size: 1.1rem;
+  }
+  
+  .discovery-carousels {
+    gap: var(--space-2xl);
+  }
 }
 
 /* Seal logo container and styling */

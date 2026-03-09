@@ -15,6 +15,7 @@ const BADGE_ICONS = {
   Gold: <FaTrophy className="badge-icon gold" />,
   Silver: <FiAward className="badge-icon silver" />,
   Bronze: <FiCircle className="badge-icon bronze" />,
+  Blue: <FiCircle className="badge-icon blue" />,
   None: "—",
 };
 
@@ -63,6 +64,17 @@ export default function VendorsPage() {
 
   const badgeClass = (badge) => (badge || "none").toLowerCase();
 
+  // Enhanced badge logic with Blue for new studios
+  const getBadgeType = (vendor) => {
+    if (!vendor) return "None";
+
+    const currentYear = new Date().getFullYear();
+    const isNew = vendor.foundedYear && currentYear - vendor.foundedYear < 2;
+
+    if (isNew) return "Blue";
+    return vendor.badgeVOE || "None";
+  };
+
   const renderStars = (rating) => {
     return (
       <div className="stars stars-sm">
@@ -86,6 +98,8 @@ export default function VendorsPage() {
         return "linear-gradient(135deg, rgba(192,192,192,0.12) 0%, rgba(192,192,192,0.03) 50%, transparent 100%)";
       case "Bronze":
         return "linear-gradient(135deg, rgba(205,127,50,0.12) 0%, rgba(205,127,50,0.03) 50%, transparent 100%)";
+      case "Blue":
+        return "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.03) 50%, transparent 100%)";
       default:
         return "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 100%)";
     }
@@ -193,7 +207,7 @@ export default function VendorsPage() {
                   {filters.badges && filters.badges.length > 0 && (
                     <div className="filter-group">
                       <div className="filter-group-title">VOE Badge</div>
-                      {["Gold", "Silver", "Bronze", "None"]
+                      {["Gold", "Silver", "Bronze", "Blue", "None"]
                         .filter((b) => filters.badges.includes(b))
                         .map((b) => (
                           <div
@@ -243,7 +257,9 @@ export default function VendorsPage() {
                         key={vendor._id}
                         onClick={() => navigate(`/vendors/${vendor.slug}`)}
                         id={`vendor-${vendor.slug}`}
-                        style={{ background: getCardGradient(vendor.badgeVOE) }}
+                        style={{
+                          background: getCardGradient(getBadgeType(vendor)),
+                        }}
                       >
                         {/* Hero Image / Logo */}
                         <div className="netflix-card-hero">
@@ -260,12 +276,12 @@ export default function VendorsPage() {
                           )}
                           <div className="netflix-card-overlay">
                             <span
-                              className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}
+                              className={`voe-badge ${badgeClass(getBadgeType(vendor))}`}
                             >
                               <span className="voe-badge-icon">
-                                {BADGE_ICONS[vendor.badgeVOE] || "—"}
+                                {BADGE_ICONS[getBadgeType(vendor)] || "—"}
                               </span>
-                              {vendor.badgeVOE}
+                              {getBadgeType(vendor)}
                             </span>
                           </div>
                         </div>
