@@ -63,6 +63,39 @@ export default function Navbar() {
     }
   };
 
+  const getNotificationLink = (notification) => {
+    if (notification?.link) return notification.link;
+
+    switch (notification?.type) {
+      case "CONTACT_REPLY":
+        return "/messages";
+      case "NEW_CONTACT":
+        return isAdmin ? "/admin" : "/messages";
+      case "FEEDBACK_APPROVED":
+      case "FEEDBACK_REJECTED":
+      case "NEW_FEEDBACK":
+        return isAdmin ? "/admin" : "/vendors";
+      case "AUDIT_REQUEST_UPDATE":
+      case "VENDOR_VERIFICATION_UPDATE":
+        return "/messages";
+      default:
+        return isAdmin ? "/admin" : "/";
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification?.read) {
+        await markRead(notification._id);
+      }
+    } catch (error) {
+      console.error("Notification mark read failed:", error);
+    } finally {
+      setNotifOpen(false);
+      navigate(getNotificationLink(notification));
+    }
+  };
+
   return (
     <>
       <nav className="navbar" id="main-navbar">
@@ -151,7 +184,16 @@ export default function Navbar() {
                         <div
                           key={n._id}
                           className={`notif-item ${n.read ? "" : "unread"}`}
-                          onClick={() => markRead(n._id)}
+                          onClick={() => handleNotificationClick(n)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleNotificationClick(n);
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          title="Open notification"
                         >
                           <span className="notif-item-icon">
                             {getNotifIcon(n.type)}

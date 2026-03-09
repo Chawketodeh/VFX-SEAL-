@@ -37,6 +37,12 @@ export default function AdminDashboard() {
   const [userFilter, setUserFilter] = useState("");
   const [feedbackFilter, setFeedbackFilter] = useState("PENDING");
   const [messageFilter, setMessageFilter] = useState("");
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipients, setRecipients] = useState([]);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState([]);
+  const [composeForm, setComposeForm] = useState({ subject: "", message: "" });
   const [actionLoading, setActionLoading] = useState(null);
   const [rejectNote, setRejectNote] = useState({});
   const [replyText, setReplyText] = useState({});
@@ -69,6 +75,16 @@ export default function AdminDashboard() {
         const params = messageFilter ? `?status=${messageFilter}` : "";
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
+        if (data.messages?.length > 0) {
+          setSelectedMessage((prev) =>
+            prev
+              ? data.messages.find((item) => item._id === prev._id) ||
+                data.messages[0]
+              : data.messages[0],
+          );
+        } else {
+          setSelectedMessage(null);
+        }
       }
     } catch (err) {
       console.error("Admin fetch error:", err);
@@ -106,10 +122,38 @@ export default function AdminDashboard() {
         const params = messageFilter ? `?status=${messageFilter}` : "";
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
+        if (data.messages?.length > 0) {
+          setSelectedMessage((prev) =>
+            prev
+              ? data.messages.find((item) => item._id === prev._id) ||
+                data.messages[0]
+              : data.messages[0],
+          );
+        } else {
+          setSelectedMessage(null);
+        }
       };
       fetchMessages();
     }
   }, [messageFilter]);
+
+  useEffect(() => {
+    if (activeTab === "messages" && composeOpen) {
+      const fetchRecipients = async () => {
+        try {
+          const q = recipientSearch.trim();
+          const endpoint = q
+            ? `/contact/admin/recipients?q=${encodeURIComponent(q)}`
+            : "/contact/admin/recipients";
+          const { data } = await api.get(endpoint);
+          setRecipients(data.users || []);
+        } catch (err) {
+          console.error("Recipients fetch error:", err);
+        }
+      };
+      fetchRecipients();
+    }
+  }, [activeTab, composeOpen, recipientSearch]);
 
   const handleUserAction = async (userId, action) => {
     setActionLoading(`${userId}-${action}`);
@@ -170,6 +214,44 @@ export default function AdminDashboard() {
       await fetchData();
     } catch (err) {
       alert("Failed to delete message");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleComposeRecipientToggle = (userId) => {
+    setSelectedRecipientIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
+
+  const handleSendNewMessage = async () => {
+    if (selectedRecipientIds.length === 0) {
+      alert("Please select at least one recipient");
+      return;
+    }
+    if (!composeForm.subject.trim() || !composeForm.message.trim()) {
+      alert("Please provide subject and message");
+      return;
+    }
+
+    setActionLoading("compose-send");
+    try {
+      await api.post("/contact/admin/send", {
+        recipientIds: selectedRecipientIds,
+        subject: composeForm.subject,
+        message: composeForm.message,
+      });
+
+      setComposeOpen(false);
+      setSelectedRecipientIds([]);
+      setComposeForm({ subject: "", message: "" });
+      setRecipientSearch("");
+      await fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to send message");
     } finally {
       setActionLoading(null);
     }
@@ -772,14 +854,7 @@ export default function AdminDashboard() {
         {/* Messages Tab */}
         {activeTab === "messages" && (
           <div className="fade-in">
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--space-sm)",
-                marginBottom: "var(--space-md)",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="admin-messages-toolbar">
               {["", "NEW", "REPLIED", "CLOSED"].map((f) => (
                 <button
                   key={f}
@@ -790,6 +865,15 @@ export default function AdminDashboard() {
                   {f || "All"}
                 </button>
               ))}
+
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => setComposeOpen(true)}
+                id="compose-message-btn"
+                style={{ marginLeft: "auto" }}
+              >
+                New Message
+              </button>
             </div>
 
             {loading ? (
@@ -802,86 +886,261 @@ export default function AdminDashboard() {
                 <h3>No messages found</h3>
               </div>
             ) : (
-              <div className="admin-messages-list">
-                {messages.map((msg) => (
-                  <div className="admin-message-card" key={msg._id}>
+              <div className="admin-messages-layout">
+                <div className="admin-messages-list admin-messages-list-pane">
+                  {messages.map((msg) => (
+                    <button
+                      type="button"
+                      className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""}`}
+                      key={msg._id}
+                      onClick={() => setSelectedMessage(msg)}
+                    >
+                      <div className="admin-message-header">
+                        <div>
+                          <div className="admin-message-studio">
+                            {msg.direction === "OUTBOUND"
+                              ? `To: ${msg.recipientName || msg.studioName}`
+                              : msg.studioName}
+                          </div>
+                          <div className="admin-message-email">
+                            {msg.direction === "OUTBOUND"
+                              ? msg.recipientEmail || msg.studioEmail
+                              : msg.studioEmail}
+                          </div>
+                          <div className="admin-message-date">
+                            {new Date(msg.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                        <span
+                          className={`status-badge ${msg.status.toLowerCase()}`}
+                        >
+                          {msg.status}
+                        </span>
+                      </div>
+                      <div className="admin-message-subject">{msg.subject}</div>
+                      <p className="admin-message-body admin-message-body-truncate">
+                        {msg.message}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedMessage && (
+                  <div className="admin-message-card admin-message-detail-pane">
                     <div className="admin-message-header">
                       <div>
                         <div className="admin-message-studio">
-                          {msg.studioName}
+                          {selectedMessage.direction === "OUTBOUND"
+                            ? `Recipient: ${selectedMessage.recipientName || selectedMessage.studioName}`
+                            : `Sender: ${selectedMessage.studioName}`}
                         </div>
                         <div className="admin-message-email">
-                          {msg.studioEmail}
+                          {selectedMessage.direction === "OUTBOUND"
+                            ? selectedMessage.recipientEmail ||
+                              selectedMessage.studioEmail
+                            : selectedMessage.studioEmail}
                         </div>
                         <div className="admin-message-date">
-                          {new Date(msg.createdAt).toLocaleString()}
+                          Created{" "}
+                          {new Date(selectedMessage.createdAt).toLocaleString()}
                         </div>
                       </div>
                       <span
-                        className={`status-badge ${msg.status.toLowerCase()}`}
+                        className={`status-badge ${selectedMessage.status.toLowerCase()}`}
                       >
-                        {msg.status}
+                        {selectedMessage.status}
                       </span>
                     </div>
+
                     <div className="admin-message-subject">
                       <FiFileText size={16} style={{ marginRight: "8px" }} />
-                      {msg.subject}
+                      {selectedMessage.subject}
                     </div>
-                    <p className="admin-message-body">{msg.message}</p>
-                    {msg.adminReply && (
+
+                    <p className="admin-message-body">
+                      {selectedMessage.message}
+                    </p>
+
+                    {selectedMessage.adminReply && (
                       <div className="admin-message-reply">
                         <strong>Your reply:</strong>
-                        <p>{msg.adminReply}</p>
+                        <p>{selectedMessage.adminReply}</p>
                         <small>
-                          Replied {new Date(msg.repliedAt).toLocaleString()}
+                          Replied{" "}
+                          {new Date(selectedMessage.repliedAt).toLocaleString()}
                         </small>
                       </div>
                     )}
-                    {msg.status === "NEW" && (
-                      <div className="admin-message-reply-form">
-                        <textarea
-                          className="form-input form-textarea"
-                          placeholder="Type your reply..."
-                          rows="3"
-                          value={replyText[msg._id] || ""}
-                          onChange={(e) =>
-                            setReplyText((prev) => ({
-                              ...prev,
-                              [msg._id]: e.target.value,
-                            }))
-                          }
-                        />
-                        <div className="admin-message-actions">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleReply(msg._id)}
-                            disabled={actionLoading === `${msg._id}-reply`}
-                          >
-                            {actionLoading === `${msg._id}-reply`
-                              ? "Sending..."
-                              : "📤 Send Reply"}
-                          </button>
+
+                    {selectedMessage.direction !== "OUTBOUND" &&
+                      selectedMessage.status === "NEW" && (
+                        <div className="admin-message-reply-form">
+                          <textarea
+                            className="form-input form-textarea"
+                            placeholder="Type your reply..."
+                            rows="4"
+                            value={replyText[selectedMessage._id] || ""}
+                            onChange={(e) =>
+                              setReplyText((prev) => ({
+                                ...prev,
+                                [selectedMessage._id]: e.target.value,
+                              }))
+                            }
+                          />
+                          <div className="admin-message-actions">
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handleReply(selectedMessage._id)}
+                              disabled={
+                                actionLoading === `${selectedMessage._id}-reply`
+                              }
+                            >
+                              {actionLoading === `${selectedMessage._id}-reply`
+                                ? "Sending..."
+                                : "Send Reply"}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {/* Always available delete button */}
+                      )}
+
                     <div
                       className="admin-message-actions"
                       style={{ marginTop: "var(--space-sm)" }}
                     >
                       <button
                         className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteMessage(msg._id)}
-                        disabled={actionLoading === `${msg._id}-delete`}
-                        id={`delete-message-${msg._id}`}
+                        onClick={() => handleDeleteMessage(selectedMessage._id)}
+                        disabled={
+                          actionLoading === `${selectedMessage._id}-delete`
+                        }
+                        id={`delete-message-${selectedMessage._id}`}
                       >
-                        {actionLoading === `${msg._id}-delete`
+                        {actionLoading === `${selectedMessage._id}-delete`
                           ? "..."
-                          : "🗑 Delete"}
+                          : "Delete"}
                       </button>
                     </div>
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+
+            {composeOpen && (
+              <div
+                className="modal-overlay"
+                onClick={() => setComposeOpen(false)}
+              >
+                <div
+                  className="modal-content compose-message-modal"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="modal-close"
+                    onClick={() => setComposeOpen(false)}
+                  >
+                    ✕
+                  </button>
+                  <div className="modal-header">
+                    <h2>New Message</h2>
+                    <p>Send a message directly to one or multiple studios.</p>
+                  </div>
+
+                  <div className="modal-body">
+                    <div className="form-group">
+                      <label className="form-label">Search recipients</label>
+                      <input
+                        className="form-input"
+                        placeholder="Search by name, email, or company"
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="compose-recipient-list">
+                      {recipients.length === 0 ? (
+                        <div className="messages-empty">
+                          No recipients found.
+                        </div>
+                      ) : (
+                        recipients.map((recipient) => (
+                          <label
+                            key={recipient._id}
+                            className="compose-recipient-item"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedRecipientIds.includes(
+                                recipient._id,
+                              )}
+                              onChange={() =>
+                                handleComposeRecipientToggle(recipient._id)
+                              }
+                            />
+                            <div>
+                              <div className="admin-message-studio">
+                                {recipient.name}
+                              </div>
+                              <div className="admin-message-email">
+                                {recipient.email} • {recipient.company}
+                              </div>
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Subject</label>
+                      <input
+                        className="form-input"
+                        value={composeForm.subject}
+                        onChange={(e) =>
+                          setComposeForm((prev) => ({
+                            ...prev,
+                            subject: e.target.value,
+                          }))
+                        }
+                        maxLength={200}
+                        placeholder="Message subject"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Message</label>
+                      <textarea
+                        className="form-input form-textarea"
+                        rows="5"
+                        value={composeForm.message}
+                        onChange={(e) =>
+                          setComposeForm((prev) => ({
+                            ...prev,
+                            message: e.target.value,
+                          }))
+                        }
+                        maxLength={5000}
+                        placeholder="Type your message"
+                      />
+                    </div>
+
+                    <div className="modal-actions">
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setComposeOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleSendNewMessage}
+                        disabled={actionLoading === "compose-send"}
+                      >
+                        {actionLoading === "compose-send"
+                          ? "Sending..."
+                          : "Send Message"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

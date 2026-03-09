@@ -121,6 +121,12 @@ router.post("/", async (req, res) => {
 
     // Store in database
     const contactMessage = await ContactMessage.create({
+      direction: "INBOUND",
+      senderType: "STUDIO",
+      senderId: linkedStudioId,
+      senderName: optionalUser?.name || safeName,
+      senderEmail: optionalUser?.email || safeEmail,
+      senderCompany: optionalUser?.company || "",
       studioId: linkedStudioId,
       studioName: safeName,
       studioEmail: safeEmail,
@@ -172,6 +178,7 @@ router.post("/", async (req, res) => {
           title: "New Contact Message",
           message: `${safeName} (${safeEmail}): "${safeSubject}"`,
           relatedId: contactMessage._id,
+          link: "/admin",
         });
         const io = req.app.get("io");
         if (io) {
@@ -212,11 +219,18 @@ router.get("/my-messages", protect, async (req, res) => {
     const skip = (page - 1) * limit;
 
     const ownershipFilter = {
-      $or: [{ studioId: user._id }, { studioEmail: user.email }],
+      $or: [
+        { studioId: user._id },
+        { recipientId: user._id },
+        { studioEmail: user.email },
+        { recipientEmail: user.email },
+      ],
     };
 
     const [messages, totalCount] = await Promise.all([
       ContactMessage.find(ownershipFilter)
+        .populate("senderId", "name email company")
+        .populate("recipientId", "name email company")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -248,10 +262,122 @@ router.get("/admin/messages", protect, requireAdmin, async (req, res) => {
   try {
     const { status } = req.query;
     const filter = status ? { status } : {};
-    const messages = await ContactMessage.find(filter).sort({ createdAt: -1 });
+    const messages = await ContactMessage.find(filter)
+      .populate("senderId", "name email company")
+      .populate("recipientId", "name email company")
+      .sort({ createdAt: -1 });
     res.json({ messages });
   } catch (error) {
     console.error("Admin messages error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── ADMIN: GET /api/contact/admin/recipients ──
+router.get("/admin/recipients", protect, requireAdmin, async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+    const query = {
+      role: "STUDIO",
+      status: "APPROVED",
+    };
+
+    if (q) {
+      query.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
+        { company: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    const users = await User.find(query)
+      .select("name email company")
+      .sort({ name: 1 })
+      .limit(100);
+
+    res.json({ users });
+  } catch (error) {
+    console.error("Admin recipients error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── ADMIN: POST /api/contact/admin/send ──
+router.post("/admin/send", protect, requireAdmin, async (req, res) => {
+  try {
+    const { recipientIds, subject, message } = req.body;
+
+    if (!Array.isArray(recipientIds) || recipientIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Please select at least one recipient" });
+    }
+    if (!subject?.trim() || !message?.trim()) {
+      return res
+        .status(400)
+        .json({ message: "Subject and message are required" });
+    }
+
+    const recipients = await User.find({
+      _id: { $in: recipientIds },
+      role: "STUDIO",
+      status: "APPROVED",
+    }).select("_id name email company");
+
+    if (recipients.length === 0) {
+      return res.status(404).json({ message: "No valid recipients found" });
+    }
+
+    const safeSubject = sanitize(subject.trim());
+    const safeMessage = sanitize(message.trim());
+
+    const docs = recipients.map((recipient) => ({
+      direction: "OUTBOUND",
+      senderType: "ADMIN",
+      senderId: req.user._id,
+      senderName: req.user.name,
+      senderEmail: req.user.email,
+      senderCompany: req.user.company || "VOE Admin",
+      studioId: recipient._id,
+      studioName: recipient.name,
+      studioEmail: recipient.email,
+      recipientId: recipient._id,
+      recipientName: recipient.name,
+      recipientEmail: recipient.email,
+      recipientCompany: recipient.company || "",
+      subject: safeSubject,
+      message: safeMessage,
+      status: "NEW",
+    }));
+
+    const createdMessages = await ContactMessage.insertMany(docs);
+
+    for (const msg of createdMessages) {
+      try {
+        const notification = await Notification.create({
+          userId: msg.studioId,
+          type: "SYSTEM",
+          title: "New Message from Admin",
+          message: `${msg.subject}`,
+          relatedId: msg._id,
+          link: "/messages",
+        });
+
+        const io = req.app.get("io");
+        if (io) {
+          io.to(`user_${msg.studioId}`).emit("notification", notification);
+        }
+      } catch (notifErr) {
+        console.error("Admin send notification error:", notifErr.message);
+      }
+    }
+
+    res.status(201).json({
+      message: `Message sent to ${createdMessages.length} recipient(s)`,
+      count: createdMessages.length,
+    });
+  } catch (error) {
+    console.error("Admin send message error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -300,6 +426,7 @@ router.post("/admin/reply/:id", protect, requireAdmin, async (req, res) => {
         title: "Admin Reply",
         message: `You have a response to "${contactMessage.subject}"`,
         relatedId: contactMessage._id,
+        link: "/messages",
       });
       const io = req.app.get("io");
       if (io) {

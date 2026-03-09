@@ -136,7 +136,13 @@ export default function MyMessagesPage() {
                             {msg.subject}
                           </div>
                           <div className="admin-message-email">
-                            Sent on {formatDate(msg.createdAt)}
+                            {msg.senderType === "ADMIN"
+                              ? `From Admin/VOE${msg.senderName ? ` • ${msg.senderName}` : ""}`
+                              : "Your message to VFX Seal"}
+                          </div>
+                          <div className="admin-message-date">
+                            {msg.senderType === "ADMIN" ? "Received" : "Sent"}{" "}
+                            on {formatDate(msg.createdAt)}
                           </div>
                         </div>
                         <span
@@ -148,7 +154,12 @@ export default function MyMessagesPage() {
 
                       <div className="admin-message-body">{msg.message}</div>
 
-                      {msg.adminReply ? (
+                      {msg.senderType === "ADMIN" ? (
+                        <div className="admin-message-reply">
+                          <strong>Admin message</strong>
+                          <p>This message was sent directly by admin/VOE.</p>
+                        </div>
+                      ) : msg.adminReply ? (
                         <div className="admin-message-reply">
                           <strong>Admin reply</strong>
                           <p>{msg.adminReply}</p>
