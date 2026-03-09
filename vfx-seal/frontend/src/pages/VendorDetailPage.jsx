@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 import FeedbackSection from "../components/FeedbackSection";
+import RequestAuditModal from "../components/RequestAuditModal";
 import {
   FiAward,
   FiCircle,
@@ -11,6 +13,7 @@ import {
   FiMapPin,
   FiUsers,
   FiExternalLink,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 
@@ -24,10 +27,19 @@ const BADGE_ICONS = {
 
 export default function VendorDetailPage() {
   const { slug } = useParams();
+  const { user, isApproved } = useAuth();
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openSections, setOpenSections] = useState({});
+
+  // Request Audit Modal state
+  const [auditModalOpen, setAuditModalOpen] = useState(false);
+  const [auditRequest, setAuditRequest] = useState({
+    sectionName: "",
+    itemName: "",
+    itemType: "",
+  });
 
   // Enhanced badge logic with Blue for new studios
   const getBadgeType = (vendor) => {
@@ -88,6 +100,27 @@ export default function VendorDetailPage() {
     } catch (err) {
       alert(err.response?.data?.message || "Unable to access PDF report");
     }
+  };
+
+  // Handle opening audit request modal
+  const handleRequestAudit = (sectionName, itemName, itemType) => {
+    if (!user || !isApproved) {
+      alert("You must be logged in and approved to request audits.");
+      return;
+    }
+
+    setAuditRequest({
+      sectionName,
+      itemName,
+      itemType,
+    });
+    setAuditModalOpen(true);
+  };
+
+  // Handle successful audit request submission
+  const handleAuditSuccess = (requestData) => {
+    console.log("Audit request submitted successfully:", requestData);
+    // Could add a toast notification here or update UI state
   };
 
   const scorePercent = vendor ? (vendor.globalScore / 10) * 100 : 0;
@@ -289,16 +322,38 @@ export default function VendorDetailPage() {
                           {section.unverifiedSkills?.length > 0 && (
                             <div className="skills-section">
                               <div className="skills-section-title unverified">
-                                ⚠ Declared — Not Verified
+                                <FiAlertTriangle
+                                  size={14}
+                                  style={{ marginRight: "4px" }}
+                                />
+                                Declared — Not Verified
                               </div>
                               <div className="skills-list">
                                 {section.unverifiedSkills.map((s) => (
-                                  <span
-                                    className="skill-chip unverified"
-                                    key={s}
-                                  >
-                                    ⚠ {s}
-                                  </span>
+                                  <div className="skill-item-wrapper" key={s}>
+                                    <span className="skill-chip unverified">
+                                      <FiAlertTriangle
+                                        size={14}
+                                        style={{ marginRight: "4px" }}
+                                      />
+                                      {s}
+                                    </span>
+                                    {user && isApproved && (
+                                      <button
+                                        className="btn btn-request btn-xs"
+                                        onClick={() =>
+                                          handleRequestAudit(
+                                            section.sectionName,
+                                            s,
+                                            "unverified",
+                                          )
+                                        }
+                                        title="Request audit for this item"
+                                      >
+                                        Request
+                                      </button>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -310,12 +365,26 @@ export default function VendorDetailPage() {
                               </div>
                               <div className="skills-list">
                                 {section.nonValidatedSkills.map((s) => (
-                                  <span
-                                    className="skill-chip nonvalidated"
-                                    key={s}
-                                  >
-                                    ✗ {s}
-                                  </span>
+                                  <div className="skill-item-wrapper" key={s}>
+                                    <span className="skill-chip nonvalidated">
+                                      ✗ {s}
+                                    </span>
+                                    {user && isApproved && (
+                                      <button
+                                        className="btn btn-request btn-xs"
+                                        onClick={() =>
+                                          handleRequestAudit(
+                                            section.sectionName,
+                                            s,
+                                            "nonvalidated",
+                                          )
+                                        }
+                                        title="Request audit for this item"
+                                      >
+                                        Request
+                                      </button>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -347,6 +416,17 @@ export default function VendorDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Request Audit Modal */}
+      <RequestAuditModal
+        isOpen={auditModalOpen}
+        onClose={() => setAuditModalOpen(false)}
+        vendor={vendor}
+        sectionName={auditRequest.sectionName}
+        itemName={auditRequest.itemName}
+        itemType={auditRequest.itemType}
+        onSuccess={handleAuditSuccess}
+      />
     </div>
   );
 }

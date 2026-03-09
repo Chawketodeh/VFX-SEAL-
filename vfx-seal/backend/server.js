@@ -14,6 +14,7 @@ const adminRoutes = require("./routes/admin");
 const feedbackRoutes = require("./routes/feedbacks");
 const notificationRoutes = require("./routes/notifications");
 const contactRoutes = require("./routes/contact");
+const auditRequestRoutes = require("./routes/auditRequests");
 
 const app = express();
 const server = http.createServer(app);
@@ -114,6 +115,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/audit-requests", auditRequestRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
