@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Feedback = require("../models/Feedback");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
@@ -45,11 +46,9 @@ router.post("/", protect, requireApproved, async (req, res) => {
       studioId: req.user._id,
     });
     if (existing) {
-      return res
-        .status(400)
-        .json({
-          message: "You have already submitted feedback for this vendor",
-        });
+      return res.status(400).json({
+        message: "You have already submitted feedback for this vendor",
+      });
     }
 
     // Moderate the content
@@ -108,11 +107,9 @@ router.post("/", protect, requireApproved, async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res
-        .status(400)
-        .json({
-          message: "You have already submitted feedback for this vendor",
-        });
+      return res.status(400).json({
+        message: "You have already submitted feedback for this vendor",
+      });
     }
     console.error("Submit feedback error:", error);
     res.status(500).json({ message: "Server error" });
@@ -195,14 +192,22 @@ router.get(
 // GET /api/feedbacks/summaries — bulk summaries for all vendors (for vendor listing)
 router.get("/summaries", protect, requireApproved, async (req, res) => {
   try {
+    const { vendorIds } = req.query; // Optional: only get summaries for specific vendors
+
+    const matchStage = {
+      status: "APPROVED",
+      isFlagged: false,
+      moderationStatus: { $ne: "deleted" },
+    };
+
+    // If specific vendor IDs provided, filter by them
+    if (vendorIds) {
+      const ids = vendorIds.split(",").map((id) => mongoose.Types.ObjectId(id));
+      matchStage.vendorId = { $in: ids };
+    }
+
     const summaries = await Feedback.aggregate([
-      {
-        $match: {
-          status: "APPROVED",
-          isFlagged: false,
-          moderationStatus: { $ne: "deleted" },
-        },
-      },
+      { $match: matchStage },
       {
         $group: {
           _id: "$vendorId",
@@ -210,12 +215,19 @@ router.get("/summaries", protect, requireApproved, async (req, res) => {
           totalRatings: { $sum: 1 },
         },
       },
+      {
+        $project: {
+          _id: 1,
+          avgRating: { $round: ["$avgRating", 1] },
+          totalRatings: 1,
+        },
+      },
     ]);
 
     const summaryMap = {};
     summaries.forEach((s) => {
       summaryMap[s._id.toString()] = {
-        avgRating: Math.round(s.avgRating * 10) / 10,
+        avgRating: s.avgRating,
         totalRatings: s.totalRatings,
       };
     });

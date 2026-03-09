@@ -62,4 +62,9 @@ const feedbackSchema = new mongoose.Schema(
 // Unique constraint: one feedback per studio per vendor
 feedbackSchema.index({ vendorId: 1, studioId: 1 }, { unique: true });
 
+// Performance indexes
+feedbackSchema.index({ status: 1, isFlagged: 1, moderationStatus: 1 }); // For summaries query
+feedbackSchema.index({ vendorId: 1, status: 1 }); // For vendor-specific queries
+feedbackSchema.index({ createdAt: -1 }); // For recent feedbacks
+
 module.exports = mongoose.model("Feedback", feedbackSchema);

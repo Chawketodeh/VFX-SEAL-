@@ -429,7 +429,7 @@ h4 { font-size: 1.125rem; }
 
 .btn-sm {
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: 0.8rem; 
 }
 
 .btn-lg {
@@ -1322,7 +1322,7 @@ h4 { font-size: 1.125rem; }
   display: flex;
   gap: var(--space-sm);
   margin-bottom: var(--space-lg);
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .assessment-controls .btn {

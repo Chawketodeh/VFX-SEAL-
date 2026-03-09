@@ -2,77 +2,55 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ContactModal from "../components/ContactModal";
-import api from "../api/client";
+import {
+  VendorGridSkeleton,
+  VendorFilterSkeleton,
+} from "../components/VendorSkeleton";
+import { useVendors } from "../hooks/useVendors";
 
 const BADGE_ICONS = { Gold: "🏆", Silver: "🥈", Bronze: "🥉", None: "—" };
 
 export default function VendorsPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({ country: [], size: [], badge: [] });
-  const [activeFilters, setActiveFilters] = useState({
-    country: [],
-    size: [],
-    badge: [],
-  });
-  const [totalCount, setTotalCount] = useState(0);
-  const [ratingSummaries, setRatingSummaries] = useState({});
   const [contactOpen, setContactOpen] = useState(false);
 
-  const fetchVendors = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (activeFilters.country.length)
-        params.set("country", activeFilters.country.join(","));
-      if (activeFilters.size.length)
-        params.set("size", activeFilters.size.join(","));
-      if (activeFilters.badge.length)
-        params.set("badge", activeFilters.badge.join(","));
+  const {
+    vendors,
+    feedbackSummaries,
+    filters,
+    loading,
+    error,
+    searchTerm,
+    activeFilters,
+    pagination,
+    updateSearch,
+    updateFilters,
+    changePage,
+  } = useVendors();
 
-      const [vendorRes, summaryRes] = await Promise.all([
-        api.get(`/vendors?${params.toString()}`),
-        api.get("/feedbacks/summaries"),
-      ]);
-
-      setVendors(vendorRes.data.vendors);
-      setTotalCount(vendorRes.data.total);
-      if (vendorRes.data.filters) setFilters(vendorRes.data.filters);
-      setRatingSummaries(summaryRes.data.summaries || {});
-    } catch (err) {
-      setError("Failed to load vendors");
-    } finally {
-      setLoading(false);
-    }
+  const handleSearchChange = (e) => {
+    updateSearch(e.target.value);
   };
 
-  useEffect(() => {
-    fetchVendors();
-  }, [activeFilters]);
-
-  const handleSearch = (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchVendors();
+    // Search is automatically triggered by debounced input
   };
 
   const toggleFilter = (type, value) => {
-    setActiveFilters((prev) => {
-      const arr = prev[type];
-      const updated = arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value];
-      return { ...prev, [type]: updated };
-    });
+    const newFilters = { ...activeFilters };
+    const arr = newFilters[type];
+    const updated = arr.includes(value)
+      ? arr.filter((v) => v !== value)
+      : [...arr, value];
+    newFilters[type] = updated;
+    updateFilters(newFilters);
   };
 
   const clearFilters = () => {
-    setActiveFilters({ country: [], size: [], badge: [] });
-    setSearch("");
+    updateFilters({ country: [], size: [], badge: [] });
+    updateSearch("");
   };
 
   const badgeClass = (badge) => (badge || "none").toLowerCase();
@@ -133,99 +111,103 @@ export default function VendorsPage() {
         <div className="vendors-layout">
           {/* Filter Sidebar */}
           <aside className="filter-sidebar fade-in">
-            <div className="filter-title">
-              Filters
-              {(activeFilters.country.length > 0 ||
-                activeFilters.size.length > 0 ||
-                activeFilters.badge.length > 0) && (
-                <button
-                  className="btn btn-sm btn-secondary"
-                  onClick={clearFilters}
-                  style={{ marginLeft: "auto", fontSize: "0.7rem" }}
+            {loading && filters.countries.length === 0 ? (
+              <VendorFilterSkeleton />
+            ) : (
+              <>
+                <div className="filter-title">
+                  Filters
+                  {(activeFilters.country.length > 0 ||
+                    activeFilters.size.length > 0 ||
+                    activeFilters.badge.length > 0) && (
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      onClick={clearFilters}
+                      style={{ marginLeft: "auto", fontSize: "0.7rem" }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <form
+                  onSubmit={handleSearchSubmit}
+                  style={{ marginBottom: "var(--space-lg)" }}
                 >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            <form
-              onSubmit={handleSearch}
-              style={{ marginBottom: "var(--space-lg)" }}
-            >
-              <div className="search-bar">
-                <input
-                  className="form-input"
-                  placeholder="Search vendors..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  id="vendor-search"
-                />
-              </div>
-            </form>
-
-            {filters.countries && filters.countries.length > 0 && (
-              <div className="filter-group">
-                <div className="filter-group-title">Country</div>
-                {filters.countries.sort().map((c) => (
-                  <div
-                    key={c}
-                    className={`filter-option ${activeFilters.country.includes(c) ? "active" : ""}`}
-                    onClick={() => toggleFilter("country", c)}
-                  >
-                    <span className="filter-checkbox" />
-                    {c}
+                  <div className="search-bar">
+                    <input
+                      className="form-input"
+                      placeholder="Search vendors..."
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      id="vendor-search"
+                    />
                   </div>
-                ))}
-              </div>
-            )}
+                </form>
 
-            {filters.sizes && filters.sizes.length > 0 && (
-              <div className="filter-group">
-                <div className="filter-group-title">Size</div>
-                {["Micro", "Small", "Medium", "Large"]
-                  .filter((s) => filters.sizes.includes(s))
-                  .map((s) => (
-                    <div
-                      key={s}
-                      className={`filter-option ${activeFilters.size.includes(s) ? "active" : ""}`}
-                      onClick={() => toggleFilter("size", s)}
-                    >
-                      <span className="filter-checkbox" />
-                      {s}
-                    </div>
-                  ))}
-              </div>
-            )}
+                {filters.countries && filters.countries.length > 0 && (
+                  <div className="filter-group">
+                    <div className="filter-group-title">Country</div>
+                    {filters.countries.sort().map((c) => (
+                      <div
+                        key={c}
+                        className={`filter-option ${activeFilters.country.includes(c) ? "active" : ""}`}
+                        onClick={() => toggleFilter("country", c)}
+                      >
+                        <span className="filter-checkbox" />
+                        {c}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            {filters.badges && filters.badges.length > 0 && (
-              <div className="filter-group">
-                <div className="filter-group-title">VOE Badge</div>
-                {["Gold", "Silver", "Bronze", "None"]
-                  .filter((b) => filters.badges.includes(b))
-                  .map((b) => (
-                    <div
-                      key={b}
-                      className={`filter-option ${activeFilters.badge.includes(b) ? "active" : ""}`}
-                      onClick={() => toggleFilter("badge", b)}
-                    >
-                      <span className="filter-checkbox" />
-                      {BADGE_ICONS[b]} {b}
-                    </div>
-                  ))}
-              </div>
+                {filters.sizes && filters.sizes.length > 0 && (
+                  <div className="filter-group">
+                    <div className="filter-group-title">Size</div>
+                    {["Micro", "Small", "Medium", "Large"]
+                      .filter((s) => filters.sizes.includes(s))
+                      .map((s) => (
+                        <div
+                          key={s}
+                          className={`filter-option ${activeFilters.size.includes(s) ? "active" : ""}`}
+                          onClick={() => toggleFilter("size", s)}
+                        >
+                          <span className="filter-checkbox" />
+                          {s}
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {filters.badges && filters.badges.length > 0 && (
+                  <div className="filter-group">
+                    <div className="filter-group-title">VOE Badge</div>
+                    {["Gold", "Silver", "Bronze", "None"]
+                      .filter((b) => filters.badges.includes(b))
+                      .map((b) => (
+                        <div
+                          key={b}
+                          className={`filter-option ${activeFilters.badge.includes(b) ? "active" : ""}`}
+                          onClick={() => toggleFilter("badge", b)}
+                        >
+                          <span className="filter-checkbox" />
+                          {BADGE_ICONS[b]} {b}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </>
             )}
           </aside>
 
           {/* Vendor List — Netflix Style */}
           <main>
             <div className="vendors-count">
-              {totalCount} vendor{totalCount !== 1 ? "s" : ""} found
+              {pagination.total} vendor{pagination.total !== 1 ? "s" : ""} found
             </div>
 
             {loading ? (
-              <div className="loading">
-                <div className="spinner" />
-              </div>
+              <VendorGridSkeleton count={9} />
             ) : error ? (
               <div className="alert alert-error">{error}</div>
             ) : vendors.length === 0 ? (
@@ -237,7 +219,7 @@ export default function VendorsPage() {
             ) : (
               <div className="netflix-grid">
                 {vendors.map((vendor) => {
-                  const summary = ratingSummaries[vendor._id] || {
+                  const summary = feedbackSummaries[vendor._id] || {
                     avgRating: 0,
                     totalRatings: 0,
                   };
