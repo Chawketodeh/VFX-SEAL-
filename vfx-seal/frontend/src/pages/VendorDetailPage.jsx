@@ -2,8 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../api/client";
 import FeedbackSection from "../components/FeedbackSection";
+import { FiAward, FiCircle, FiPlay, FiFileText, FiCheck } from "react-icons/fi";
+import { FaTrophy } from "react-icons/fa";
 
-const BADGE_ICONS = { Gold: "🏆", Silver: "🥈", Bronze: "🥉", None: "—" };
+const BADGE_ICONS = {
+  Gold: <FaTrophy className="badge-icon gold" />,
+  Silver: <FiAward className="badge-icon silver" />,
+  Bronze: <FiCircle className="badge-icon bronze" />,
+  None: "—",
+};
 
 export default function VendorDetailPage() {
   const { slug } = useParams();
@@ -136,7 +143,7 @@ export default function VendorDetailPage() {
                 )}
                 {vendor.demoReel && (
                   <span className="vendor-detail-meta-item">
-                    🎬{" "}
+                    <FiPlay size={16} style={{ marginRight: "4px" }} />
                     <a
                       href={vendor.demoReel}
                       target="_blank"
@@ -182,7 +189,8 @@ export default function VendorDetailPage() {
           {vendor.assessment?.length > 0 && (
             <>
               <div className="vendor-detail-section-title">
-                📋 VOE Assessment — {vendor.assessment.length} Sections
+                <FiFileText size={16} style={{ marginRight: "8px" }} />
+                VOE Assessment — {vendor.assessment.length} Sections
               </div>
 
               {/* Global Control Buttons */}
@@ -229,12 +237,20 @@ export default function VendorDetailPage() {
                         {section.validatedSkills?.length > 0 && (
                           <div className="skills-section">
                             <div className="skills-section-title validated">
-                              ✓ Validated by VOE
+                              <FiCheck
+                                size={14}
+                                style={{ marginRight: "4px" }}
+                              />
+                              Validated by VOE
                             </div>
                             <div className="skills-list">
                               {section.validatedSkills.map((s) => (
                                 <span className="skill-chip validated" key={s}>
-                                  ✓ {s}
+                                  <FiCheck
+                                    size={14}
+                                    style={{ marginRight: "4px" }}
+                                  />
+                                  {s}
                                 </span>
                               ))}
                             </div>

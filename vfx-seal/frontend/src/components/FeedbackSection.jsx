@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { FiStar, FiEdit } from "react-icons/fi";
 
 export default function FeedbackSection({ vendorId, vendorName }) {
   const { user, isAdmin } = useAuth();
@@ -301,7 +302,14 @@ export default function FeedbackSection({ vendorId, vendorName }) {
                     className="btn btn-primary"
                     disabled={submitting}
                   >
-                    {submitting ? "Submitting..." : "📝 Submit Review"}
+                    {submitting ? (
+                      "Submitting..."
+                    ) : (
+                      <>
+                        <FiEdit size={16} style={{ marginRight: "8px" }} />
+                        Submit Review
+                      </>
+                    )}
                   </button>
                 </form>
               </div>

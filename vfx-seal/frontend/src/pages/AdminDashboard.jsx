@@ -1,8 +1,27 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
+import {
+  FiAward,
+  FiCircle,
+  FiStar,
+  FiCheck,
+  FiFileText,
+  FiHome,
+  FiPackage,
+  FiMail,
+  FiX,
+  FiSlash,
+  FiTrash2,
+} from "react-icons/fi";
+import { FaTrophy } from "react-icons/fa";
 
-const BADGE_ICONS = { Gold: "🏆", Silver: "🥈", Bronze: "🥉", None: "—" };
+const BADGE_ICONS = {
+  Gold: <FaTrophy className="badge-icon gold" />,
+  Silver: <FiAward className="badge-icon silver" />,
+  Bronze: <FiCircle className="badge-icon bronze" />,
+  None: "—",
+};
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -266,21 +285,24 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("studios")}
             id="tab-studios"
           >
-            🏢 Studios
+            <FiHome className="tab-icon" />
+            Studios
           </button>
           <button
             className={`admin-tab ${activeTab === "vendors" ? "active" : ""}`}
             onClick={() => setActiveTab("vendors")}
             id="tab-vendors"
           >
-            🏗 Vendors
+            <FiPackage className="tab-icon" />
+            Vendors
           </button>
           <button
             className={`admin-tab ${activeTab === "feedbacks" ? "active" : ""}`}
             onClick={() => setActiveTab("feedbacks")}
             id="tab-feedbacks"
           >
-            ⭐ Feedbacks{" "}
+            <FiStar className="tab-icon" />
+            Feedbacks{" "}
             {stats?.pendingFeedbacks > 0 && (
               <span className="tab-badge">{stats.pendingFeedbacks}</span>
             )}
@@ -290,7 +312,8 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("messages")}
             id="tab-messages"
           >
-            📩 Messages{" "}
+            <FiMail className="tab-icon" />
+            Messages{" "}
             {stats?.newMessages > 0 && (
               <span className="tab-badge">{stats.newMessages}</span>
             )}
@@ -390,9 +413,17 @@ export default function AdminDashboard() {
                                     }
                                     id={`approve-${user._id}`}
                                   >
-                                    {actionLoading === `${user._id}-approve`
-                                      ? "..."
-                                      : "✓ Approve"}
+                                    {actionLoading === `${user._id}-approve` ? (
+                                      "..."
+                                    ) : (
+                                      <>
+                                        <FiCheck
+                                          size={14}
+                                          style={{ marginRight: "4px" }}
+                                        />
+                                        Approve
+                                      </>
+                                    )}
                                   </button>
                                   <button
                                     className="btn btn-danger btn-sm"
@@ -404,7 +435,8 @@ export default function AdminDashboard() {
                                     }
                                     id={`reject-${user._id}`}
                                   >
-                                    ✗ Reject
+                                    <FiX className="button-icon" />
+                                    Reject
                                   </button>
                                 </>
                               )}
@@ -419,7 +451,8 @@ export default function AdminDashboard() {
                                   }
                                   id={`block-${user._id}`}
                                 >
-                                  🚫 Block
+                                  <FiSlash className="button-icon" />
+                                  Block
                                 </button>
                               )}
                               {user.status === "REJECTED" && (
@@ -433,7 +466,8 @@ export default function AdminDashboard() {
                                   }
                                   id={`approve-${user._id}`}
                                 >
-                                  ✓ Re-Approve
+                                  <FiCheck className="button-icon" />
+                                  Re-Approve
                                 </button>
                               )}
                               {/* Always available delete button */}
@@ -445,9 +479,14 @@ export default function AdminDashboard() {
                                 }
                                 id={`delete-user-${user._id}`}
                               >
-                                {actionLoading === `${user._id}-delete`
-                                  ? "..."
-                                  : "🗑"}
+                                {actionLoading === `${user._id}-delete` ? (
+                                  "..."
+                                ) : (
+                                  <>
+                                    <FiTrash2 className="button-icon" />
+                                    Delete
+                                  </>
+                                )}
                               </button>
                             </div>
                           </td>
@@ -641,9 +680,14 @@ export default function AdminDashboard() {
                             }
                             disabled={actionLoading === `${fb._id}-approve`}
                           >
-                            {actionLoading === `${fb._id}-approve`
-                              ? "..."
-                              : "✓ Approve"}
+                            {actionLoading === `${fb._id}-approve` ? (
+                              "..."
+                            ) : (
+                              <>
+                                <FiCheck className="button-icon" />
+                                Approve
+                              </>
+                            )}
                           </button>
                           <div className="admin-feedback-reject-group">
                             <input
@@ -665,7 +709,8 @@ export default function AdminDashboard() {
                               }
                               disabled={actionLoading === `${fb._id}-reject`}
                             >
-                              ✗ Reject
+                              <FiX className="button-icon" />
+                              Reject
                             </button>
                           </div>
                         </>
@@ -751,7 +796,8 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <div className="admin-message-subject">
-                      📋 {msg.subject}
+                      <FiFileText size={16} style={{ marginRight: "8px" }} />
+                      {msg.subject}
                     </div>
                     <p className="admin-message-body">{msg.message}</p>
                     {msg.adminReply && (

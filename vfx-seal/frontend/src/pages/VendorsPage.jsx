@@ -7,8 +7,15 @@ import {
   VendorFilterSkeleton,
 } from "../components/VendorSkeleton";
 import { useVendors } from "../hooks/useVendors";
+import { FiAward, FiCircle, FiSearch, FiStar } from "react-icons/fi";
+import { FaTrophy } from "react-icons/fa";
 
-const BADGE_ICONS = { Gold: "🏆", Silver: "🥈", Bronze: "🥉", None: "—" };
+const BADGE_ICONS = {
+  Gold: <FaTrophy className="badge-icon gold" />,
+  Silver: <FiAward className="badge-icon silver" />,
+  Bronze: <FiCircle className="badge-icon bronze" />,
+  None: "—",
+};
 
 export default function VendorsPage() {
   const navigate = useNavigate();
@@ -59,12 +66,11 @@ export default function VendorsPage() {
     return (
       <div className="stars stars-sm">
         {[1, 2, 3, 4, 5].map((star) => (
-          <span
+          <FiStar
             key={star}
             className={`star ${star <= Math.round(rating) ? "filled" : ""}`}
-          >
-            ★
-          </span>
+            size={16}
+          />
         ))}
       </div>
     );
@@ -212,7 +218,9 @@ export default function VendorsPage() {
               <div className="alert alert-error">{error}</div>
             ) : vendors.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🔍</div>
+                <div className="empty-state-icon">
+                  <FiSearch size={48} />
+                </div>
                 <h3>No vendors found</h3>
                 <p>Try adjusting your search or filters.</p>
               </div>

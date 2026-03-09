@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { client } from "../api/client";
+import api from "../api/client";
 
 // Debounce hook
 export const useDebounce = (value, delay) => {
@@ -81,7 +81,7 @@ export const useVendors = () => {
     }
 
     try {
-      const response = await client.get("/vendors", {
+      const response = await api.get("/vendors", {
         params: { filtersOnly: "true" },
       });
       const filterData = response.data.filters;
@@ -122,7 +122,7 @@ export const useVendors = () => {
           Object.entries(params).filter(([_, value]) => value && value !== ""),
         );
 
-        const response = await client.get("/vendors", { params: cleanParams });
+        const response = await api.get("/vendors", { params: cleanParams });
         const data = response.data;
 
         setVendors(data.vendors);
@@ -159,7 +159,7 @@ export const useVendors = () => {
     }
 
     try {
-      const response = await client.get("/feedbacks/summaries", {
+      const response = await api.get("/feedbacks/summaries", {
         params: { vendorIds: vendorIds.join(",") },
       });
       const summaries = response.data.summaries;
