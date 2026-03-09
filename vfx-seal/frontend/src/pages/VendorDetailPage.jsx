@@ -2,8 +2,16 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../api/client";
 import FeedbackSection from "../components/FeedbackSection";
-import PublicNavbar from "../components/PublicNavbar";
-import { FiAward, FiCircle, FiPlay, FiFileText, FiCheck } from "react-icons/fi";
+import {
+  FiAward,
+  FiCircle,
+  FiPlay,
+  FiFileText,
+  FiCheck,
+  FiMapPin,
+  FiUsers,
+  FiExternalLink,
+} from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 
 const BADGE_ICONS = {
@@ -106,9 +114,6 @@ export default function VendorDetailPage() {
 
   return (
     <div className="vendor-detail-page">
-      {/* Always show PublicNavbar since this page doesn't use authentication */}
-      <PublicNavbar />
-
       <div className="page-wrapper">
         <div className="container">
           <div className="vendor-detail fade-in">
@@ -139,19 +144,19 @@ export default function VendorDetailPage() {
                 </h1>
                 <div className="vendor-detail-meta">
                   <span className="vendor-detail-meta-item">
-                    📍 {vendor.country}
+                    <FiMapPin size={14} /> {vendor.country}
                   </span>
                   <span className="vendor-detail-meta-item">
-                    📐 {vendor.size}
+                    <FiUsers size={14} /> {vendor.size}
                   </span>
                   {vendor.foundedYear && (
                     <span className="vendor-detail-meta-item">
-                      📅 Est. {vendor.foundedYear}
+                      Est. {vendor.foundedYear}
                     </span>
                   )}
                   {vendor.website && (
                     <span className="vendor-detail-meta-item">
-                      🌐{" "}
+                      <FiExternalLink size={14} />{" "}
                       <a
                         href={vendor.website}
                         target="_blank"

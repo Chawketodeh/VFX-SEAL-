@@ -653,7 +653,7 @@ export default function AdminDashboard() {
               </div>
             ) : feedbacks.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">⭐</div>
+                <div className="empty-state-icon"></div>
                 <h3>No feedbacks found</h3>
               </div>
             ) : (

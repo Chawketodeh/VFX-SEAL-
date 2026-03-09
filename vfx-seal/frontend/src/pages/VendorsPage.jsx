@@ -8,7 +8,7 @@ import {
   VendorFilterSkeleton,
 } from "../components/VendorSkeleton";
 import { useVendors } from "../hooks/useVendors";
-import { FiAward, FiCircle, FiSearch, FiStar } from "react-icons/fi";
+import { FiAward, FiCircle, FiSearch, FiStar, FiMapPin } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 
 const BADGE_ICONS = {
@@ -290,7 +290,9 @@ export default function VendorsPage() {
                         <div className="netflix-card-body">
                           <h3 className="netflix-card-name">{vendor.name}</h3>
                           <div className="netflix-card-meta">
-                            <span>📍 {vendor.country}</span>
+                            <span>
+                              <FiMapPin size={14} /> {vendor.country}
+                            </span>
                             <span className="vendor-meta-dot" />
                             <span>{vendor.size}</span>
                           </div>

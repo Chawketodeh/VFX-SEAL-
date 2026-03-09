@@ -180,7 +180,7 @@ export default function VendorDiscovery() {
           {/* Top Rated Studios */}
           {vendorCategories.topRated.length > 0 && (
             <VendorCarousel
-              title="🏆 Top Rated Studios"
+              title="Top Rated Studios"
               vendors={vendorCategories.topRated}
               category="topRated"
             />
@@ -189,7 +189,7 @@ export default function VendorDiscovery() {
           {/* Veteran Studios */}
           {vendorCategories.veterans.length > 0 && (
             <VendorCarousel
-              title="🎖️ Industry Veterans"
+              title="Industry Veterans"
               vendors={vendorCategories.veterans}
               category="veterans"
             />
@@ -198,7 +198,7 @@ export default function VendorDiscovery() {
           {/* Large Teams */}
           {vendorCategories.bigTeam.length > 0 && (
             <VendorCarousel
-              title="🏢 Big Teams & Studios"
+              title="Big Teams & Studios"
               vendors={vendorCategories.bigTeam}
               category="bigTeam"
             />
@@ -207,7 +207,7 @@ export default function VendorDiscovery() {
           {/* New Studios */}
           {vendorCategories.newStudios.length > 0 && (
             <VendorCarousel
-              title="⭐ Rising Stars"
+              title="Rising Stars"
               vendors={vendorCategories.newStudios}
               category="newStudios"
             />
@@ -221,11 +221,11 @@ export default function VendorDiscovery() {
             .map(([region, vendors]) => (
               <VendorCarousel
                 key={region}
-                title={`🌍 ${region}`}
+                title={region}
                 vendors={vendors}
                 category={`region-${region.toLowerCase().replace(" ", "-")}`}
               />
-            ))}
+            ))}}
         </div>
       </div>
     </section>

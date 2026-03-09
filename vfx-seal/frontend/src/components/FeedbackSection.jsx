@@ -236,7 +236,7 @@ export default function FeedbackSection({ vendorId, vendorName }) {
                 className="empty-state"
                 style={{ padding: "var(--space-xl)" }}
               >
-                <div className="empty-state-icon">⭐</div>
+                <div className="empty-state-icon"></div>
                 <h3>No reviews yet</h3>
                 <p>Be the first to share your experience with {vendorName}.</p>
               </div>
@@ -270,7 +270,7 @@ export default function FeedbackSection({ vendorId, vendorName }) {
             {/* Leave Review Form (only for studios who haven't submitted yet) */}
             {!isAdmin && !myFeedback && (
               <div className="feedback-form-card">
-                <h3>⭐ Leave a Review</h3>
+                <h3>Leave a Review</h3>
                 <p className="feedback-form-subtitle">
                   Share your experience with {vendorName}
                 </p>

@@ -5,6 +5,8 @@ import {
   FiChevronRight,
   FiAward,
   FiCircle,
+  FiMapPin,
+  FiUsers,
 } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 
@@ -128,10 +130,10 @@ export default function VendorCarousel({ title, vendors, category }) {
                     <h4 className="carousel-vendor-name">{vendor.name}</h4>
                     <div className="carousel-vendor-meta">
                       <span className="carousel-location">
-                        📍 {vendor.country}
+                        <FiMapPin size={14} /> {vendor.country}
                       </span>
                       <span className="carousel-team-size">
-                        👥 {getTeamSizeNumber(vendor.size)}
+                        <FiUsers size={14} /> {getTeamSizeNumber(vendor.size)}
                       </span>
                     </div>
 

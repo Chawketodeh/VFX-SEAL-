@@ -276,7 +276,7 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <p className="unlock-exclusivity">
-                  🔒 Exclusive access for approved studios and partners
+                  Exclusive access for approved studios and partners
                 </p>
               </div>
             </div>
