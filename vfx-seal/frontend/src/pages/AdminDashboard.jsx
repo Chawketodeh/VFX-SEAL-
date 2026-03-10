@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 import EditStudioModal from "../components/EditStudioModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 const BADGE_ICONS = {
   Gold: <FaTrophy className="badge-icon gold" />,
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
   const [vendors, setVendors] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [adminUnreadCount, setAdminUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [userFilter, setUserFilter] = useState("");
   const [feedbackFilter, setFeedbackFilter] = useState("PENDING");
@@ -52,6 +54,56 @@ export default function AdminDashboard() {
   const [replyText, setReplyText] = useState({});
   const [editStudioModalOpen, setEditStudioModalOpen] = useState(false);
   const [selectedStudio, setSelectedStudio] = useState(null);
+  const [deleteMessageTarget, setDeleteMessageTarget] = useState(null);
+
+  const getMessagesEndpoint = () => {
+    const params = messageFilter ? `?status=${messageFilter}` : "";
+    return `/contact/admin/messages${params}`;
+  };
+
+  const syncAdminMessageState = async (preferredMessageId = null) => {
+    const [statsRes, messagesRes] = await Promise.all([
+      api.get("/admin/stats"),
+      api.get(getMessagesEndpoint()),
+    ]);
+
+    const nextMessages = messagesRes.data?.messages || [];
+    const nextUnreadFromMessages = messagesRes.data?.unreadCount ?? 0;
+    const nextUnreadFromStats = statsRes.data?.newMessages;
+    const nextUnread =
+      typeof nextUnreadFromStats === "number"
+        ? nextUnreadFromStats
+        : nextUnreadFromMessages;
+
+    setStats({
+      ...statsRes.data,
+      newMessages: nextUnread,
+    });
+    setMessages(nextMessages);
+    setAdminUnreadCount(nextUnread);
+
+    if (nextMessages.length === 0) {
+      setSelectedMessage(null);
+      return;
+    }
+
+    setSelectedMessage((prev) => {
+      if (preferredMessageId) {
+        return (
+          nextMessages.find((item) => item._id === preferredMessageId) ||
+          nextMessages[0]
+        );
+      }
+
+      if (prev?._id) {
+        return (
+          nextMessages.find((item) => item._id === prev._id) || nextMessages[0]
+        );
+      }
+
+      return nextMessages[0];
+    });
+  };
 
   useEffect(() => {
     fetchData();
@@ -87,6 +139,7 @@ export default function AdminDashboard() {
     try {
       const [statsRes] = await Promise.all([api.get("/admin/stats")]);
       setStats(statsRes.data);
+      setAdminUnreadCount(statsRes.data?.newMessages || 0);
 
       if (activeTab === "studios") {
         const params = userFilter ? `?status=${userFilter}` : "";
@@ -104,6 +157,7 @@ export default function AdminDashboard() {
         const params = messageFilter ? `?status=${messageFilter}` : "";
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
+        setAdminUnreadCount(data.unreadCount || 0);
         if (data.messages?.length > 0) {
           setSelectedMessage((prev) =>
             prev
@@ -151,6 +205,7 @@ export default function AdminDashboard() {
         const params = messageFilter ? `?status=${messageFilter}` : "";
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
+        setAdminUnreadCount(data.unreadCount || 0);
         if (data.messages?.length > 0) {
           setSelectedMessage((prev) =>
             prev
@@ -165,6 +220,21 @@ export default function AdminDashboard() {
       fetchMessages();
     }
   }, [messageFilter]);
+
+  useEffect(() => {
+    const markSelectedAsRead = async () => {
+      if (!selectedMessage?._id || !selectedMessage?.unreadForAdmin) return;
+
+      try {
+        await api.patch(`/contact/admin/messages/${selectedMessage._id}/read`);
+        await syncAdminMessageState(selectedMessage._id);
+      } catch (err) {
+        console.error("Mark admin message read error:", err);
+      }
+    };
+
+    markSelectedAsRead();
+  }, [selectedMessage?._id, selectedMessage?.unreadForAdmin]);
 
   useEffect(() => {
     if (
@@ -279,12 +349,18 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm("Are you sure you want to delete this message?"))
-      return;
+    setDeleteMessageTarget(messageId);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!deleteMessageTarget) return;
+
+    const messageId = deleteMessageTarget;
     setActionLoading(`${messageId}-delete`);
     try {
       await api.delete(`/contact/admin/messages/${messageId}`);
       await fetchData();
+      setDeleteMessageTarget(null);
     } catch (err) {
       alert("Failed to delete message");
     } finally {
@@ -415,6 +491,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleMarkAllMessagesRead = async () => {
+    if (adminUnreadCount === 0) return;
+
+    try {
+      await api.patch("/contact/admin/messages/read-all");
+      await syncAdminMessageState(selectedMessage?._id || null);
+    } catch (err) {
+      console.error("Mark all admin messages read error:", err);
+    }
+  };
+
+  const getAdminMessageBadge = (message) => {
+    return message?.unreadForAdmin
+      ? { label: "NEW", className: "new" }
+      : { label: "READ", className: "closed" };
+  };
+
   const badgeClass = (badge) => (badge || "none").toLowerCase();
   const renderStars = (rating) => (
     <span className="stars stars-sm">
@@ -475,7 +568,7 @@ export default function AdminDashboard() {
             </div>
             <div className="stat-card">
               <div className="stat-card-value" style={{ color: "#f97316" }}>
-                {stats.newMessages}
+                {adminUnreadCount}
               </div>
               <div className="stat-card-label">New Messages</div>
             </div>
@@ -518,8 +611,8 @@ export default function AdminDashboard() {
           >
             <FiMail className="tab-icon" />
             Messages{" "}
-            {stats?.newMessages > 0 && (
-              <span className="tab-badge">{stats.newMessages}</span>
+            {adminUnreadCount > 0 && (
+              <span className="tab-badge">{adminUnreadCount}</span>
             )}
           </button>
         </div>
@@ -970,6 +1063,16 @@ export default function AdminDashboard() {
                 </button>
               ))}
 
+              {adminUnreadCount > 0 && (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleMarkAllMessagesRead}
+                  id="mark-all-messages-read-btn"
+                >
+                  Mark all as read
+                </button>
+              )}
+
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => setComposeOpen(true)}
@@ -992,141 +1095,163 @@ export default function AdminDashboard() {
             ) : (
               <div className="admin-messages-layout">
                 <div className="admin-messages-list admin-messages-list-pane">
-                  {messages.map((msg) => (
-                    <button
-                      type="button"
-                      className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
-                      key={msg._id}
-                      onClick={() => setSelectedMessage(msg)}
-                      id={`admin-message-${msg._id}`}
-                    >
-                      <div className="admin-message-header">
-                        <div>
-                          <div className="admin-message-studio">
-                            {msg.direction === "OUTBOUND"
-                              ? `To: ${msg.recipientName || msg.studioName}`
-                              : msg.studioName}
-                          </div>
-                          <div className="admin-message-email">
-                            {msg.direction === "OUTBOUND"
-                              ? msg.recipientEmail || msg.studioEmail
-                              : msg.studioEmail}
-                          </div>
-                          <div className="admin-message-date">
-                            {new Date(msg.createdAt).toLocaleString()}
-                          </div>
-                        </div>
-                        <span
-                          className={`status-badge ${msg.status.toLowerCase()}`}
+                  {messages.map((msg) =>
+                    (() => {
+                      const badge = getAdminMessageBadge(msg);
+                      return (
+                        <button
+                          type="button"
+                          className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                          key={msg._id}
+                          onClick={() => setSelectedMessage(msg)}
+                          id={`admin-message-${msg._id}`}
                         >
-                          {msg.status}
-                        </span>
-                      </div>
-                      <div className="admin-message-subject">{msg.subject}</div>
-                      <p className="admin-message-body admin-message-body-truncate">
-                        {msg.message}
-                      </p>
-                    </button>
-                  ))}
+                          <div className="admin-message-header">
+                            <div>
+                              <div className="admin-message-studio">
+                                {msg.direction === "OUTBOUND"
+                                  ? `To: ${msg.recipientName || msg.studioName}`
+                                  : msg.studioName}
+                              </div>
+                              <div className="admin-message-email">
+                                {msg.direction === "OUTBOUND"
+                                  ? msg.recipientEmail || msg.studioEmail
+                                  : msg.studioEmail}
+                              </div>
+                              <div className="admin-message-date">
+                                {new Date(msg.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                            <span className={`status-badge ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+                          <div className="admin-message-subject">
+                            {msg.subject}
+                          </div>
+                          <p className="admin-message-body admin-message-body-truncate">
+                            {msg.message}
+                          </p>
+                        </button>
+                      );
+                    })(),
+                  )}
                 </div>
 
-                {selectedMessage && (
-                  <div className="admin-message-card admin-message-detail-pane">
-                    <div className="admin-message-header">
-                      <div>
-                        <div className="admin-message-studio">
-                          {selectedMessage.direction === "OUTBOUND"
-                            ? `Recipient: ${selectedMessage.recipientName || selectedMessage.studioName}`
-                            : `Sender: ${selectedMessage.studioName}`}
-                        </div>
-                        <div className="admin-message-email">
-                          {selectedMessage.direction === "OUTBOUND"
-                            ? selectedMessage.recipientEmail ||
-                              selectedMessage.studioEmail
-                            : selectedMessage.studioEmail}
-                        </div>
-                        <div className="admin-message-date">
-                          Created{" "}
-                          {new Date(selectedMessage.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                      <span
-                        className={`status-badge ${selectedMessage.status.toLowerCase()}`}
-                      >
-                        {selectedMessage.status}
-                      </span>
-                    </div>
-
-                    <div className="admin-message-subject">
-                      <FiFileText size={16} style={{ marginRight: "8px" }} />
-                      {selectedMessage.subject}
-                    </div>
-
-                    <p className="admin-message-body">
-                      {selectedMessage.message}
-                    </p>
-
-                    {selectedMessage.adminReply && (
-                      <div className="admin-message-reply">
-                        <strong>Your reply:</strong>
-                        <p>{selectedMessage.adminReply}</p>
-                        <small>
-                          Replied{" "}
-                          {new Date(selectedMessage.repliedAt).toLocaleString()}
-                        </small>
-                      </div>
-                    )}
-
-                    {selectedMessage.direction !== "OUTBOUND" &&
-                      selectedMessage.status === "NEW" && (
-                        <div className="admin-message-reply-form">
-                          <textarea
-                            className="form-input form-textarea"
-                            placeholder="Type your reply..."
-                            rows="4"
-                            value={replyText[selectedMessage._id] || ""}
-                            onChange={(e) =>
-                              setReplyText((prev) => ({
-                                ...prev,
-                                [selectedMessage._id]: e.target.value,
-                              }))
-                            }
-                          />
-                          <div className="admin-message-actions">
-                            <button
-                              className="btn btn-primary btn-sm"
-                              onClick={() => handleReply(selectedMessage._id)}
-                              disabled={
-                                actionLoading === `${selectedMessage._id}-reply`
-                              }
-                            >
-                              {actionLoading === `${selectedMessage._id}-reply`
-                                ? "Sending..."
-                                : "Send Reply"}
-                            </button>
+                {selectedMessage &&
+                  (() => {
+                    const selectedBadge = getAdminMessageBadge(selectedMessage);
+                    return (
+                      <div className="admin-message-card admin-message-detail-pane">
+                        <div className="admin-message-header">
+                          <div>
+                            <div className="admin-message-studio">
+                              {selectedMessage.direction === "OUTBOUND"
+                                ? `Recipient: ${selectedMessage.recipientName || selectedMessage.studioName}`
+                                : `Sender: ${selectedMessage.studioName}`}
+                            </div>
+                            <div className="admin-message-email">
+                              {selectedMessage.direction === "OUTBOUND"
+                                ? selectedMessage.recipientEmail ||
+                                  selectedMessage.studioEmail
+                                : selectedMessage.studioEmail}
+                            </div>
+                            <div className="admin-message-date">
+                              Created{" "}
+                              {new Date(
+                                selectedMessage.createdAt,
+                              ).toLocaleString()}
+                            </div>
                           </div>
+                          <span
+                            className={`status-badge ${selectedBadge.className}`}
+                          >
+                            {selectedBadge.label}
+                          </span>
                         </div>
-                      )}
 
-                    <div
-                      className="admin-message-actions"
-                      style={{ marginTop: "var(--space-sm)" }}
-                    >
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteMessage(selectedMessage._id)}
-                        disabled={
-                          actionLoading === `${selectedMessage._id}-delete`
-                        }
-                        id={`delete-message-${selectedMessage._id}`}
-                      >
-                        {actionLoading === `${selectedMessage._id}-delete`
-                          ? "..."
-                          : "Delete"}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                        <div className="admin-message-subject">
+                          <FiFileText
+                            size={16}
+                            style={{ marginRight: "8px" }}
+                          />
+                          {selectedMessage.subject}
+                        </div>
+
+                        <p className="admin-message-body">
+                          {selectedMessage.message}
+                        </p>
+
+                        {selectedMessage.adminReply && (
+                          <div className="admin-message-reply">
+                            <strong>Your reply:</strong>
+                            <p>{selectedMessage.adminReply}</p>
+                            <small>
+                              Replied{" "}
+                              {new Date(
+                                selectedMessage.repliedAt,
+                              ).toLocaleString()}
+                            </small>
+                          </div>
+                        )}
+
+                        {selectedMessage.direction !== "OUTBOUND" &&
+                          selectedMessage.status === "NEW" && (
+                            <div className="admin-message-reply-form">
+                              <textarea
+                                className="form-input form-textarea"
+                                placeholder="Type your reply..."
+                                rows="4"
+                                value={replyText[selectedMessage._id] || ""}
+                                onChange={(e) =>
+                                  setReplyText((prev) => ({
+                                    ...prev,
+                                    [selectedMessage._id]: e.target.value,
+                                  }))
+                                }
+                              />
+                              <div className="admin-message-actions">
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() =>
+                                    handleReply(selectedMessage._id)
+                                  }
+                                  disabled={
+                                    actionLoading ===
+                                    `${selectedMessage._id}-reply`
+                                  }
+                                >
+                                  {actionLoading ===
+                                  `${selectedMessage._id}-reply`
+                                    ? "Sending..."
+                                    : "Send Reply"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                        <div
+                          className="admin-message-actions"
+                          style={{ marginTop: "var(--space-sm)" }}
+                        >
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() =>
+                              handleDeleteMessage(selectedMessage._id)
+                            }
+                            disabled={
+                              actionLoading === `${selectedMessage._id}-delete`
+                            }
+                            id={`delete-message-${selectedMessage._id}`}
+                          >
+                            {actionLoading === `${selectedMessage._id}-delete`
+                              ? "..."
+                              : "Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
               </div>
             )}
 
@@ -1276,6 +1401,28 @@ export default function AdminDashboard() {
         }}
         studio={selectedStudio}
         onStudioUpdate={handleStudioUpdate}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(deleteMessageTarget)}
+        title="Delete Message"
+        message="Are you sure you want to delete this message?"
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        loading={
+          !!deleteMessageTarget &&
+          actionLoading === `${deleteMessageTarget}-delete`
+        }
+        onCancel={() => {
+          if (
+            deleteMessageTarget &&
+            actionLoading === `${deleteMessageTarget}-delete`
+          ) {
+            return;
+          }
+          setDeleteMessageTarget(null);
+        }}
+        onConfirm={confirmDeleteMessage}
       />
     </div>
   );

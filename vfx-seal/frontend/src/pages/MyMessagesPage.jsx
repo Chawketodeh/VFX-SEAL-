@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { FiInbox, FiMessageSquare, FiFileText } from "react-icons/fi";
@@ -15,6 +15,12 @@ export default function MyMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [highlightedMessageId, setHighlightedMessageId] = useState("");
+  const markedReadRef = useRef(new Set());
+
+  const unreadStudioMessageCount = useMemo(
+    () => contactMessages.filter((message) => message.unreadForStudio).length,
+    [contactMessages],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -103,6 +109,83 @@ export default function MyMessagesPage() {
     return () => clearTimeout(timer);
   }, [highlightedMessageId, contactMessages]);
 
+  useEffect(() => {
+    const unreadIds = contactMessages
+      .filter((message) => message.unreadForStudio)
+      .map((message) => message._id)
+      .filter((id) => !markedReadRef.current.has(id));
+
+    if (unreadIds.length === 0) return;
+
+    unreadIds.forEach((id) => markedReadRef.current.add(id));
+
+    setContactMessages((prev) =>
+      prev.map((message) =>
+        unreadIds.includes(message._id)
+          ? {
+              ...message,
+              unreadForStudio: false,
+              studioReadAt: new Date().toISOString(),
+            }
+          : message,
+      ),
+    );
+
+    Promise.allSettled(
+      unreadIds.map((id) => api.patch(`/contact/my-messages/${id}/read`)),
+    ).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const failedId = unreadIds[index];
+          markedReadRef.current.delete(failedId);
+          setContactMessages((prev) =>
+            prev.map((message) =>
+              message._id === failedId
+                ? {
+                    ...message,
+                    unreadForStudio: true,
+                    studioReadAt: null,
+                  }
+                : message,
+            ),
+          );
+        }
+      });
+    });
+  }, [contactMessages]);
+
+  const handleMarkAllMessagesRead = async () => {
+    if (unreadStudioMessageCount === 0) return;
+
+    try {
+      await api.patch("/contact/my-messages/read-all");
+
+      setContactMessages((prev) =>
+        prev.map((message) => ({
+          ...message,
+          unreadForStudio: false,
+          studioReadAt: message.studioReadAt || new Date().toISOString(),
+        })),
+      );
+    } catch (err) {
+      console.error("Mark all studio messages read error:", err);
+    }
+  };
+
+  const getStudioMessageBadge = (message) => {
+    const defaultStatus = message?.status || "NEW";
+    if (message?.senderType === "ADMIN" && defaultStatus === "NEW") {
+      return message?.unreadForStudio
+        ? { label: "NEW", className: "new" }
+        : { label: "READ", className: "closed" };
+    }
+
+    return {
+      label: defaultStatus,
+      className: defaultStatus.toLowerCase(),
+    };
+  };
+
   const totalItems = useMemo(
     () => contactMessages.length + auditRequests.length,
     [contactMessages.length, auditRequests.length],
@@ -145,65 +228,93 @@ export default function MyMessagesPage() {
             </div>
 
             <section className="messages-section">
-              <div className="messages-section-title">
-                <FiMessageSquare size={16} /> Contact Messages
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "var(--space-sm)",
+                  marginBottom: "var(--space-sm)",
+                }}
+              >
+                <div className="messages-section-title" style={{ margin: 0 }}>
+                  <FiMessageSquare size={16} /> Contact Messages
+                </div>
+                {unreadStudioMessageCount > 0 && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleMarkAllMessagesRead}
+                    id="mark-all-studio-messages-read-btn"
+                  >
+                    Mark all as read
+                  </button>
+                )}
               </div>
 
               {contactMessages.length === 0 ? (
                 <div className="messages-empty">No contact messages yet.</div>
               ) : (
                 <div className="admin-messages-list">
-                  {contactMessages.map((msg) => (
-                    <article
-                      className={`admin-message-card ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
-                      key={msg._id}
-                      id={`user-message-${msg._id}`}
-                    >
-                      <div className="admin-message-header">
-                        <div>
-                          <div className="admin-message-studio">
-                            {msg.subject}
-                          </div>
-                          <div className="admin-message-email">
-                            {msg.senderType === "ADMIN"
-                              ? `From Admin/VOE${msg.senderName ? ` • ${msg.senderName}` : ""}`
-                              : "Your message to VFX Seal"}
-                          </div>
-                          <div className="admin-message-date">
-                            {msg.senderType === "ADMIN" ? "Received" : "Sent"}{" "}
-                            on {formatDate(msg.createdAt)}
-                          </div>
-                        </div>
-                        <span
-                          className={`status-badge ${(msg.status || "NEW").toLowerCase()}`}
+                  {contactMessages.map((msg) =>
+                    (() => {
+                      const badge = getStudioMessageBadge(msg);
+                      return (
+                        <article
+                          className={`admin-message-card ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                          key={msg._id}
+                          id={`user-message-${msg._id}`}
                         >
-                          {msg.status || "NEW"}
-                        </span>
-                      </div>
+                          <div className="admin-message-header">
+                            <div>
+                              <div className="admin-message-studio">
+                                {msg.subject}
+                              </div>
+                              <div className="admin-message-email">
+                                {msg.senderType === "ADMIN"
+                                  ? `From Admin/VOE${msg.senderName ? ` • ${msg.senderName}` : ""}`
+                                  : "Your message to VFX Seal"}
+                              </div>
+                              <div className="admin-message-date">
+                                {msg.senderType === "ADMIN"
+                                  ? "Received"
+                                  : "Sent"}{" "}
+                                on {formatDate(msg.createdAt)}
+                              </div>
+                            </div>
+                            <span className={`status-badge ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                          </div>
 
-                      <div className="admin-message-body">{msg.message}</div>
+                          <div className="admin-message-body">
+                            {msg.message}
+                          </div>
 
-                      {msg.senderType === "ADMIN" ? (
-                        <div className="admin-message-reply">
-                          <strong>Admin message</strong>
-                          <p>This message was sent directly by admin/VOE.</p>
-                        </div>
-                      ) : msg.adminReply ? (
-                        <div className="admin-message-reply">
-                          <strong>Admin reply</strong>
-                          <p>{msg.adminReply}</p>
-                          <small>
-                            Replied on{" "}
-                            {formatDate(msg.repliedAt || msg.updatedAt)}
-                          </small>
-                        </div>
-                      ) : (
-                        <div className="messages-pending-reply">
-                          Waiting for admin reply.
-                        </div>
-                      )}
-                    </article>
-                  ))}
+                          {msg.senderType === "ADMIN" ? (
+                            <div className="admin-message-reply">
+                              <strong>Admin message</strong>
+                              <p>
+                                This message was sent directly by admin/VOE.
+                              </p>
+                            </div>
+                          ) : msg.adminReply ? (
+                            <div className="admin-message-reply">
+                              <strong>Admin reply</strong>
+                              <p>{msg.adminReply}</p>
+                              <small>
+                                Replied on{" "}
+                                {formatDate(msg.repliedAt || msg.updatedAt)}
+                              </small>
+                            </div>
+                          ) : (
+                            <div className="messages-pending-reply">
+                              Waiting for admin reply.
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })(),
+                  )}
                 </div>
               )}
             </section>

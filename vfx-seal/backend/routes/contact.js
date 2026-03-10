@@ -47,6 +47,47 @@ function sanitize(str) {
     .replace(/'/g, "&#x27;");
 }
 
+function isUnsetDate(value) {
+  return !value;
+}
+
+function getAdminUnreadFilter() {
+  return {
+    $and: [
+      { status: "NEW" },
+      {
+        $or: [
+          { senderType: "STUDIO" },
+          { senderType: { $exists: false } },
+          { senderType: null },
+        ],
+      },
+      {
+        $or: [
+          { direction: { $ne: "OUTBOUND" } },
+          { direction: { $exists: false } },
+          { direction: null },
+        ],
+      },
+      {
+        $or: [{ adminReadAt: null }, { adminReadAt: { $exists: false } }],
+      },
+    ],
+  };
+}
+
+function isUnreadForAdmin(message) {
+  const senderType = message?.senderType || "STUDIO";
+  const direction = message?.direction || "INBOUND";
+  const status = message?.status || "NEW";
+  const isAdminInboxSide = senderType !== "ADMIN" && direction !== "OUTBOUND";
+  return status === "NEW" && isAdminInboxSide && isUnsetDate(message.adminReadAt);
+}
+
+function isUnreadForStudio(message) {
+  return isUnsetDate(message.studioReadAt);
+}
+
 // Optional auth helper for public contact form:
 // if a valid JWT is provided, link the message to the studio account.
 async function getOptionalUser(req) {
@@ -132,6 +173,8 @@ router.post("/", async (req, res) => {
       studioEmail: safeEmail,
       subject: safeSubject,
       message: safeMessage,
+      adminReadAt: null,
+      studioReadAt: new Date(),
     });
 
     // Attempt to send email via Nodemailer
@@ -238,10 +281,20 @@ router.get("/my-messages", protect, async (req, res) => {
       ContactMessage.countDocuments(ownershipFilter),
     ]);
 
+    const messagesWithReadState = messages.map((message) => ({
+      ...message,
+      unreadForStudio: isUnreadForStudio(message),
+    }));
+
+    const unreadCount = messagesWithReadState.filter(
+      (message) => message.unreadForStudio,
+    ).length;
+
     const totalPages = Math.ceil(totalCount / limit) || 1;
 
     res.json({
-      messages,
+      messages: messagesWithReadState,
+      unreadCount,
       pagination: {
         page,
         limit,
@@ -265,10 +318,177 @@ router.get("/admin/messages", protect, requireAdmin, async (req, res) => {
     const messages = await ContactMessage.find(filter)
       .populate("senderId", "name email company")
       .populate("recipientId", "name email company")
-      .sort({ createdAt: -1 });
-    res.json({ messages });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const messagesWithReadState = messages.map((message) => ({
+      ...message,
+      unreadForAdmin: isUnreadForAdmin(message),
+    }));
+
+    const unreadCount = await ContactMessage.countDocuments(
+      getAdminUnreadFilter(),
+    );
+
+    res.json({ messages: messagesWithReadState, unreadCount });
   } catch (error) {
     console.error("Admin messages error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── ADMIN: PATCH /api/contact/admin/messages/:id/read ──
+router.patch(
+  "/admin/messages/:id/read",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const message = await ContactMessage.findById(req.params.id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+
+      if (isUnsetDate(message.adminReadAt)) {
+        message.adminReadAt = new Date();
+        await message.save();
+      }
+
+      const unreadCount = await ContactMessage.countDocuments(
+        getAdminUnreadFilter(),
+      );
+
+      res.json({
+        message: "Message marked as read",
+        contactMessage: message,
+        unreadCount,
+      });
+    } catch (error) {
+      console.error("Admin mark read error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+);
+
+// ── ADMIN: PATCH /api/contact/admin/messages/read-all ──
+router.patch(
+  "/admin/messages/read-all",
+  protect,
+  requireAdmin,
+  async (_req, res) => {
+    try {
+      const now = new Date();
+      const result = await ContactMessage.updateMany(
+        getAdminUnreadFilter(),
+        { $set: { adminReadAt: now } },
+      );
+
+      res.json({
+        message: "All admin messages marked as read",
+        modifiedCount: result.modifiedCount || 0,
+        unreadCount: 0,
+      });
+    } catch (error) {
+      console.error("Admin mark all read error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+);
+
+// ── STUDIO: PATCH /api/contact/my-messages/:id/read ──
+router.patch("/my-messages/:id/read", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "STUDIO") {
+      return res
+        .status(403)
+        .json({ message: "Only studio users can mark messages as read" });
+    }
+
+    const message = await ContactMessage.findById(req.params.id);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const ownsMessage =
+      (message.studioId &&
+        message.studioId.toString() === req.user._id.toString()) ||
+      (message.recipientId &&
+        message.recipientId.toString() === req.user._id.toString()) ||
+      message.studioEmail === req.user.email ||
+      message.recipientEmail === req.user.email;
+
+    if (!ownsMessage) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (isUnsetDate(message.studioReadAt)) {
+      message.studioReadAt = new Date();
+      await message.save();
+    }
+
+    const unreadCount = await ContactMessage.countDocuments({
+      $and: [
+        {
+          $or: [
+            { studioId: req.user._id },
+            { recipientId: req.user._id },
+            { studioEmail: req.user.email },
+            { recipientEmail: req.user.email },
+          ],
+        },
+        {
+          $or: [{ studioReadAt: null }, { studioReadAt: { $exists: false } }],
+        },
+      ],
+    });
+
+    res.json({
+      message: "Message marked as read",
+      contactMessage: message,
+      unreadCount,
+    });
+  } catch (error) {
+    console.error("Studio mark read error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── STUDIO: PATCH /api/contact/my-messages/read-all ──
+router.patch("/my-messages/read-all", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "STUDIO") {
+      return res
+        .status(403)
+        .json({ message: "Only studio users can mark messages as read" });
+    }
+
+    const now = new Date();
+    const result = await ContactMessage.updateMany(
+      {
+        $and: [
+          {
+            $or: [
+              { studioId: req.user._id },
+              { recipientId: req.user._id },
+              { studioEmail: req.user.email },
+              { recipientEmail: req.user.email },
+            ],
+          },
+          {
+            $or: [{ studioReadAt: null }, { studioReadAt: { $exists: false } }],
+          },
+        ],
+      },
+      { $set: { studioReadAt: now } },
+    );
+
+    res.json({
+      message: "All studio messages marked as read",
+      modifiedCount: result.modifiedCount || 0,
+      unreadCount: 0,
+    });
+  } catch (error) {
+    console.error("Studio mark all read error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -348,6 +568,8 @@ router.post("/admin/send", protect, requireAdmin, async (req, res) => {
       subject: safeSubject,
       message: safeMessage,
       status: "NEW",
+      adminReadAt: new Date(),
+      studioReadAt: null,
     }));
 
     const createdMessages = await ContactMessage.insertMany(docs);
@@ -395,6 +617,8 @@ router.post("/admin/reply/:id", protect, requireAdmin, async (req, res) => {
     contactMessage.adminReply = reply;
     contactMessage.status = "REPLIED";
     contactMessage.repliedAt = new Date();
+    contactMessage.adminReadAt = new Date();
+    contactMessage.studioReadAt = null;
     await contactMessage.save();
 
     // Send reply email

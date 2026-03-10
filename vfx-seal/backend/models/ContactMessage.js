@@ -83,6 +83,14 @@ const contactMessageSchema = new mongoose.Schema(
     repliedAt: {
       type: Date,
     },
+    adminReadAt: {
+      type: Date,
+      default: null,
+    },
+    studioReadAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

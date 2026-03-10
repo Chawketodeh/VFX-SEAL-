@@ -2143,6 +2143,30 @@ h4 { font-size: 1.125rem; }
   color: var(--text-secondary);
 }
 
+.confirm-modal {
+  max-width: 420px;
+  padding: var(--space-xl);
+}
+
+.confirm-modal::before {
+  background: linear-gradient(90deg, rgba(248, 113, 113, 0.95), rgba(220, 38, 38, 0.9), rgba(248, 113, 113, 0.95));
+}
+
+.confirm-modal .modal-header {
+  margin-bottom: var(--space-md);
+}
+
+.confirm-modal-message {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.confirm-modal .modal-actions {
+  margin-top: var(--space-lg);
+  justify-content: flex-end;
+}
+
 /* ============================================
    NEW — Request Audit Modal
    ============================================ */

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import { FiBell, FiSettings } from "react-icons/fi";
 import EditProfileModal from "./EditProfileModal";
+import api from "../api/client";
 
 export default function Navbar() {
   const { user, logout, isAdmin, updateProfile } = useAuth();
@@ -115,9 +116,22 @@ export default function Navbar() {
   };
 
   const handleNotificationClick = async (notification) => {
+    const relatedId = notification?.relatedId;
+    const isMessageType = ["NEW_CONTACT", "CONTACT_REPLY", "SYSTEM"].includes(
+      notification?.type,
+    );
+
     try {
       if (!notification?.read) {
         await markRead(notification._id);
+      }
+
+      if (relatedId && isMessageType) {
+        if (isAdmin) {
+          await api.patch(`/contact/admin/messages/${relatedId}/read`);
+        } else {
+          await api.patch(`/contact/my-messages/${relatedId}/read`);
+        }
       }
     } catch (error) {
       console.error("Notification mark read failed:", error);
@@ -203,7 +217,7 @@ export default function Navbar() {
                     <h4>Notifications</h4>
                     {unreadCount > 0 && (
                       <button className="notif-mark-read" onClick={markAllRead}>
-                        Mark all read
+                        Mark all as read
                       </button>
                     )}
                   </div>

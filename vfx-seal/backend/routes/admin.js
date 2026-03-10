@@ -5,6 +5,29 @@ const ContactMessage = require("../models/ContactMessage");
 const { protect, requireAdmin } = require("../middleware/auth");
 const router = express.Router();
 
+const unreadByAdminFilter = {
+  $and: [
+    { status: "NEW" },
+    {
+      $or: [
+        { senderType: "STUDIO" },
+        { senderType: { $exists: false } },
+        { senderType: null },
+      ],
+    },
+    {
+      $or: [
+        { direction: { $ne: "OUTBOUND" } },
+        { direction: { $exists: false } },
+        { direction: null },
+      ],
+    },
+    {
+      $or: [{ adminReadAt: null }, { adminReadAt: { $exists: false } }],
+    },
+  ],
+};
+
 // All admin routes require authentication + admin role
 router.use(protect, requireAdmin);
 
@@ -136,7 +159,7 @@ router.get("/stats", async (req, res) => {
       Vendor.countDocuments(),
       Feedback.countDocuments({ status: "PENDING" }),
       Feedback.countDocuments(),
-      ContactMessage.countDocuments({ status: "NEW" }),
+      ContactMessage.countDocuments(unreadByAdminFilter),
     ]);
 
     res.json({
@@ -149,6 +172,7 @@ router.get("/stats", async (req, res) => {
       totalFeedbacks,
       newMessages,
     });
+
   } catch (error) {
     console.error("Admin stats error:", error);
     res.status(500).json({ message: "Server error" });
