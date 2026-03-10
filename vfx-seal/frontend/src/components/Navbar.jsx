@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import { FiBell, FiSettings } from "react-icons/fi";
 import EditProfileModal from "./EditProfileModal";
+import ConfirmModal from "./ConfirmModal";
 import api from "../api/client";
 
 export default function Navbar() {
@@ -15,9 +16,15 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const notifRef = useRef(null);
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     navigate("/login");
   };
@@ -277,7 +284,7 @@ export default function Navbar() {
               </button>
               <button
                 className="btn btn-secondary btn-sm"
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 id="logout-btn"
               >
                 Logout
@@ -358,7 +365,7 @@ export default function Navbar() {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            handleLogout();
+            handleLogoutClick();
           }}
           style={{ color: "var(--danger)", marginTop: "auto" }}
         >
@@ -372,6 +379,18 @@ export default function Navbar() {
         onClose={() => setEditProfileOpen(false)}
         user={user}
         onProfileUpdate={updateProfile}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Confirm Logout"
+        message="Are you sure you want to sign out?"
+        cancelLabel="Cancel"
+        confirmLabel="Confirm"
+        isDangerous={false}
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
       />
     </>
   );

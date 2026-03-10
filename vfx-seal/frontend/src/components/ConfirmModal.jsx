@@ -7,6 +7,7 @@ export default function ConfirmModal({
   confirmLabel = "Delete",
   cancelLabel = "Cancel",
   loading = false,
+  isDangerous = true,
   onCancel,
   onConfirm,
 }) {
@@ -35,7 +36,7 @@ export default function ConfirmModal({
       }}
     >
       <div
-        className="modal-content confirm-modal"
+        className={`modal-content confirm-modal ${isDangerous ? "" : "confirm-modal-safe"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -61,11 +62,15 @@ export default function ConfirmModal({
             {cancelLabel}
           </button>
           <button
-            className="btn btn-danger"
+            className={`btn ${isDangerous ? "btn-danger" : "btn-primary"}`}
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? "Deleting..." : confirmLabel}
+            {loading
+              ? isDangerous
+                ? "Deleting..."
+                : "Loading..."
+              : confirmLabel}
           </button>
         </div>
       </div>

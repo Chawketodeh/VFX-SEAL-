@@ -2152,6 +2152,10 @@ h4 { font-size: 1.125rem; }
   background: linear-gradient(90deg, rgba(248, 113, 113, 0.95), rgba(220, 38, 38, 0.9), rgba(248, 113, 113, 0.95));
 }
 
+.confirm-modal-safe::before {
+  background: linear-gradient(90deg, var(--accent), #8b6914, var(--accent));
+}
+
 .confirm-modal .modal-header {
   margin-bottom: var(--space-md);
 }
