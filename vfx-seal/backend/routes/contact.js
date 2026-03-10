@@ -85,7 +85,10 @@ function isUnreadForAdmin(message) {
 }
 
 function isUnreadForStudio(message) {
-  return isUnsetDate(message.studioReadAt);
+  // Unread for studio = message from ADMIN where studioReadAt is not yet set
+  const senderType = message?.senderType || "STUDIO";
+  const isFromAdmin = senderType === "ADMIN";
+  return isFromAdmin && isUnsetDate(message.studioReadAt);
 }
 
 // Optional auth helper for public contact form:

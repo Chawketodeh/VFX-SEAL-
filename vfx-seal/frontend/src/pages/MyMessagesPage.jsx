@@ -15,20 +15,71 @@ export default function MyMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [highlightedMessageId, setHighlightedMessageId] = useState("");
-  const markedReadRef = useRef(new Set());
+  const [selectedMessageId, setSelectedMessageId] = useState("");
+  const markingReadRef = useRef(new Set());
 
   const unreadStudioMessageCount = useMemo(
     () => contactMessages.filter((message) => message.unreadForStudio).length,
     [contactMessages],
   );
 
+  const selectedMessage = useMemo(
+    () =>
+      contactMessages.find((message) => message._id === selectedMessageId) ||
+      null,
+    [contactMessages, selectedMessageId],
+  );
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const messageId = params.get("messageId");
     if (messageId) {
+      setSelectedMessageId(messageId);
       setHighlightedMessageId(messageId);
     }
   }, [location.search]);
+
+  const markMessageAsRead = async (messageId) => {
+    if (!messageId || markingReadRef.current.has(messageId)) return;
+
+    const target = contactMessages.find((message) => message._id === messageId);
+    if (!target) return;
+
+    // Only mark as read if backend says it's unread for studio
+    // (which means it's from admin and hasn't been read)
+    const shouldMarkAsRead = target?.unreadForStudio === true;
+
+    if (!shouldMarkAsRead) return;
+
+    markingReadRef.current.add(messageId);
+
+    try {
+      const { data } = await api.patch(`/contact/my-messages/${messageId}/read`);
+      const readAt = data?.contactMessage?.studioReadAt || new Date().toISOString();
+
+      setContactMessages((prev) =>
+        prev.map((message) =>
+          message._id === messageId
+            ? {
+                ...message,
+                unreadForStudio: false,
+                studioReadAt: readAt,
+              }
+            : message,
+        ),
+      );
+    } catch (err) {
+      console.error("Mark studio message read error:", err);
+    } finally {
+      markingReadRef.current.delete(messageId);
+    }
+  };
+
+  const handleMessageOpen = (messageId) => {
+    console.log("Opening message:", messageId);
+    setSelectedMessageId(messageId);
+    markMessageAsRead(messageId);
+  };
 
   useEffect(() => {
     const fetchInbox = async () => {
@@ -103,56 +154,12 @@ export default function MyMessagesPage() {
     );
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
+      handleMessageOpen(highlightedMessageId);
     }
 
     const timer = setTimeout(() => setHighlightedMessageId(""), 3500);
     return () => clearTimeout(timer);
   }, [highlightedMessageId, contactMessages]);
-
-  useEffect(() => {
-    const unreadIds = contactMessages
-      .filter((message) => message.unreadForStudio)
-      .map((message) => message._id)
-      .filter((id) => !markedReadRef.current.has(id));
-
-    if (unreadIds.length === 0) return;
-
-    unreadIds.forEach((id) => markedReadRef.current.add(id));
-
-    setContactMessages((prev) =>
-      prev.map((message) =>
-        unreadIds.includes(message._id)
-          ? {
-              ...message,
-              unreadForStudio: false,
-              studioReadAt: new Date().toISOString(),
-            }
-          : message,
-      ),
-    );
-
-    Promise.allSettled(
-      unreadIds.map((id) => api.patch(`/contact/my-messages/${id}/read`)),
-    ).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === "rejected") {
-          const failedId = unreadIds[index];
-          markedReadRef.current.delete(failedId);
-          setContactMessages((prev) =>
-            prev.map((message) =>
-              message._id === failedId
-                ? {
-                    ...message,
-                    unreadForStudio: true,
-                    studioReadAt: null,
-                  }
-                : message,
-            ),
-          );
-        }
-      });
-    });
-  }, [contactMessages]);
 
   const handleMarkAllMessagesRead = async () => {
     if (unreadStudioMessageCount === 0) return;
@@ -173,17 +180,13 @@ export default function MyMessagesPage() {
   };
 
   const getStudioMessageBadge = (message) => {
-    const defaultStatus = message?.status || "NEW";
-    if (message?.senderType === "ADMIN" && defaultStatus === "NEW") {
-      return message?.unreadForStudio
-        ? { label: "NEW", className: "new" }
-        : { label: "READ", className: "closed" };
-    }
+    // Use backend-computed unreadForStudio as single source of truth
+    // (only admin messages with null studioReadAt are unread)
+    const isUnread = message?.unreadForStudio === true;
 
-    return {
-      label: defaultStatus,
-      className: defaultStatus.toLowerCase(),
-    };
+    return isUnread
+      ? { label: "NEW", className: "new" }
+      : { label: "READ", className: "closed" };
   };
 
   const totalItems = useMemo(
@@ -254,15 +257,26 @@ export default function MyMessagesPage() {
               {contactMessages.length === 0 ? (
                 <div className="messages-empty">No contact messages yet.</div>
               ) : (
-                <div className="admin-messages-list">
-                  {contactMessages.map((msg) =>
-                    (() => {
+                <div className="admin-messages-layout">
+                  <div className="admin-messages-list admin-messages-list-pane">
+                    {contactMessages.map((msg) => {
                       const badge = getStudioMessageBadge(msg);
                       return (
-                        <article
-                          className={`admin-message-card ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                        <button
+                          type="button"
+                          className={`admin-message-card admin-message-selectable ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""} ${selectedMessageId === msg._id ? "selected" : ""}`}
                           key={msg._id}
                           id={`user-message-${msg._id}`}
+                          onClick={() => handleMessageOpen(msg._id)}
+                          onMouseDown={() =>
+                            console.log("Message card mouse down:", msg._id)
+                          }
+                          style={{
+                            cursor: "pointer",
+                            pointerEvents: "auto",
+                            position: "relative",
+                            zIndex: 1,
+                          }}
                         >
                           <div className="admin-message-header">
                             <div>
@@ -275,10 +289,7 @@ export default function MyMessagesPage() {
                                   : "Your message to VFX Seal"}
                               </div>
                               <div className="admin-message-date">
-                                {msg.senderType === "ADMIN"
-                                  ? "Received"
-                                  : "Sent"}{" "}
-                                on {formatDate(msg.createdAt)}
+                                {msg.senderType === "ADMIN" ? "Received" : "Sent"} on {formatDate(msg.createdAt)}
                               </div>
                             </div>
                             <span className={`status-badge ${badge.className}`}>
@@ -286,34 +297,58 @@ export default function MyMessagesPage() {
                             </span>
                           </div>
 
-                          <div className="admin-message-body">
+                          <p className="admin-message-body admin-message-body-truncate">
                             {msg.message}
-                          </div>
-
-                          {msg.senderType === "ADMIN" ? (
-                            <div className="admin-message-reply">
-                              <strong>Admin message</strong>
-                              <p>
-                                This message was sent directly by admin/VOE.
-                              </p>
-                            </div>
-                          ) : msg.adminReply ? (
-                            <div className="admin-message-reply">
-                              <strong>Admin reply</strong>
-                              <p>{msg.adminReply}</p>
-                              <small>
-                                Replied on{" "}
-                                {formatDate(msg.repliedAt || msg.updatedAt)}
-                              </small>
-                            </div>
-                          ) : (
-                            <div className="messages-pending-reply">
-                              Waiting for admin reply.
-                            </div>
-                          )}
-                        </article>
+                          </p>
+                        </button>
                       );
-                    })(),
+                    })}
+                  </div>
+
+                  {selectedMessage && (
+                    <article className="admin-message-card admin-message-detail-pane">
+                      <div className="admin-message-header">
+                        <div>
+                          <div className="admin-message-studio">
+                            {selectedMessage.subject}
+                          </div>
+                          <div className="admin-message-email">
+                            {selectedMessage.senderType === "ADMIN"
+                              ? `From Admin/VOE${selectedMessage.senderName ? ` • ${selectedMessage.senderName}` : ""}`
+                              : "Your message to VFX Seal"}
+                          </div>
+                          <div className="admin-message-date">
+                            {selectedMessage.senderType === "ADMIN" ? "Received" : "Sent"} on {formatDate(selectedMessage.createdAt)}
+                          </div>
+                        </div>
+                        <span
+                          className={`status-badge ${getStudioMessageBadge(selectedMessage).className}`}
+                        >
+                          {getStudioMessageBadge(selectedMessage).label}
+                        </span>
+                      </div>
+
+                      <p className="admin-message-body">{selectedMessage.message}</p>
+
+                      {selectedMessage.senderType === "ADMIN" ? (
+                        <div className="admin-message-reply">
+                          <strong>Admin message</strong>
+                          <p>This message was sent directly by admin/VOE.</p>
+                        </div>
+                      ) : selectedMessage.adminReply ? (
+                        <div className="admin-message-reply">
+                          <strong>Admin reply</strong>
+                          <p>{selectedMessage.adminReply}</p>
+                          <small>
+                            Replied on {formatDate(selectedMessage.repliedAt || selectedMessage.updatedAt)}
+                          </small>
+                        </div>
+                      ) : (
+                        <div className="messages-pending-reply">
+                          Waiting for admin reply.
+                        </div>
+                      )}
+                    </article>
                   )}
                 </div>
               )}
