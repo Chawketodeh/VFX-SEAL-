@@ -212,6 +212,9 @@ export default function ContactPage() {
                         Technical Services
                       </option>
                       <option value="Info Services">Info Services</option>
+                      <option value="Partnerships">Partnerships</option>
+                      <option value="General Inquiry">General Inquiry</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
 

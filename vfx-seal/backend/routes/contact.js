@@ -81,7 +81,9 @@ function isUnreadForAdmin(message) {
   const direction = message?.direction || "INBOUND";
   const status = message?.status || "NEW";
   const isAdminInboxSide = senderType !== "ADMIN" && direction !== "OUTBOUND";
-  return status === "NEW" && isAdminInboxSide && isUnsetDate(message.adminReadAt);
+  return (
+    status === "NEW" && isAdminInboxSide && isUnsetDate(message.adminReadAt)
+  );
 }
 
 function isUnreadForStudio(message) {
@@ -137,7 +139,13 @@ router.post("/", async (req, res) => {
     }
 
     // Subject validation
-    const validSubjects = ["Technical Services", "Info Services"];
+    const validSubjects = [
+      "Technical Services",
+      "Info Services",
+      "Partnerships",
+      "General Inquiry",
+      "Other",
+    ];
     if (!validSubjects.includes(subject)) {
       return res.status(400).json({ message: "Please select a valid subject" });
     }
@@ -381,10 +389,9 @@ router.patch(
   async (_req, res) => {
     try {
       const now = new Date();
-      const result = await ContactMessage.updateMany(
-        getAdminUnreadFilter(),
-        { $set: { adminReadAt: now } },
-      );
+      const result = await ContactMessage.updateMany(getAdminUnreadFilter(), {
+        $set: { adminReadAt: now },
+      });
 
       res.json({
         message: "All admin messages marked as read",
