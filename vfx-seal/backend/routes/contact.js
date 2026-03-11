@@ -115,8 +115,12 @@ async function getOptionalUser(req) {
 // ── PUBLIC: POST /api/contact ── Anyone can send a contact message ──
 router.post("/", async (req, res) => {
   try {
+    // Identify optional authenticated user BEFORE rate-limit so admins can bypass it
+    const optionalUser = await getOptionalUser(req);
+    const isAdmin = optionalUser?.role === "ADMIN";
+
     const ip = req.ip || req.connection?.remoteAddress || "unknown";
-    if (!checkRateLimit(ip)) {
+    if (!isAdmin && !checkRateLimit(ip)) {
       return res.status(429).json({
         message:
           "You have reached the daily message limit. Please try again tomorrow.",
@@ -167,7 +171,7 @@ router.post("/", async (req, res) => {
     const safeMessage = sanitize(message.trim());
 
     // If caller is authenticated studio user, attach studioId for requester inbox flow
-    const optionalUser = await getOptionalUser(req);
+    // (optionalUser already resolved at top of handler)
     const linkedStudioId =
       optionalUser && optionalUser.role === "STUDIO" ? optionalUser._id : null;
 
@@ -436,6 +440,17 @@ router.patch("/my-messages/:id/read", protect, async (req, res) => {
       await message.save();
     }
 
+    await Notification.updateMany(
+      {
+        userId: req.user._id,
+        relatedId: message._id,
+        read: false,
+      },
+      { $set: { read: true } },
+    );
+
+    // Count only admin-sent messages that haven't been read by studio
+    // (to match isUnreadForStudio logic)
     const unreadCount = await ContactMessage.countDocuments({
       $and: [
         {
@@ -446,16 +461,23 @@ router.patch("/my-messages/:id/read", protect, async (req, res) => {
             { recipientEmail: req.user.email },
           ],
         },
+        { senderType: "ADMIN" }, // Only admin-sent messages are unread
         {
           $or: [{ studioReadAt: null }, { studioReadAt: { $exists: false } }],
         },
       ],
     });
 
+    const notificationUnreadCount = await Notification.countDocuments({
+      userId: req.user._id,
+      read: false,
+    });
+
     res.json({
       message: "Message marked as read",
       contactMessage: message,
       unreadCount,
+      notificationUnreadCount,
     });
   } catch (error) {
     console.error("Studio mark read error:", error);
@@ -472,6 +494,25 @@ router.patch("/my-messages/read-all", protect, async (req, res) => {
         .json({ message: "Only studio users can mark messages as read" });
     }
 
+    const unreadMessages = await ContactMessage.find({
+      $and: [
+        {
+          $or: [
+            { studioId: req.user._id },
+            { recipientId: req.user._id },
+            { studioEmail: req.user.email },
+            { recipientEmail: req.user.email },
+          ],
+        },
+        { senderType: "ADMIN" },
+        {
+          $or: [{ studioReadAt: null }, { studioReadAt: { $exists: false } }],
+        },
+      ],
+    }).select("_id");
+
+    const unreadMessageIds = unreadMessages.map((message) => message._id);
+
     const now = new Date();
     const result = await ContactMessage.updateMany(
       {
@@ -484,6 +525,7 @@ router.patch("/my-messages/read-all", protect, async (req, res) => {
               { recipientEmail: req.user.email },
             ],
           },
+          { senderType: "ADMIN" }, // Only mark admin-sent messages as read
           {
             $or: [{ studioReadAt: null }, { studioReadAt: { $exists: false } }],
           },
@@ -491,6 +533,17 @@ router.patch("/my-messages/read-all", protect, async (req, res) => {
       },
       { $set: { studioReadAt: now } },
     );
+
+    if (unreadMessageIds.length > 0) {
+      await Notification.updateMany(
+        {
+          userId: req.user._id,
+          relatedId: { $in: unreadMessageIds },
+          read: false,
+        },
+        { $set: { read: true } },
+      );
+    }
 
     res.json({
       message: "All studio messages marked as read",
@@ -627,6 +680,12 @@ router.post("/admin/reply/:id", protect, requireAdmin, async (req, res) => {
     contactMessage.adminReply = reply;
     contactMessage.status = "REPLIED";
     contactMessage.repliedAt = new Date();
+    contactMessage.direction = "OUTBOUND";
+    contactMessage.senderType = "ADMIN";
+    contactMessage.senderId = req.user._id;
+    contactMessage.senderName = req.user.name || "VOE Admin";
+    contactMessage.senderEmail = req.user.email || "";
+    contactMessage.senderCompany = req.user.company || "VOE Admin";
     contactMessage.adminReadAt = new Date();
     contactMessage.studioReadAt = null;
     await contactMessage.save();

@@ -5,7 +5,7 @@ import api from "../api/client";
 import PublicNavbar from "../components/PublicNavbar";
 
 export default function ContactPage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, token } = useAuth();
   const [form, setForm] = useState({
     firstName: "",
     email: "",
@@ -42,7 +42,12 @@ export default function ContactPage() {
 
     setLoading(true);
     try {
-      await api.post("/contact", form);
+      // Include Authorization header if user is logged in
+      const headers = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      await api.post("/contact", form, { headers });
       setSuccess(true);
       setForm({ firstName: "", email: "", subject: "", message: "" });
     } catch (err) {

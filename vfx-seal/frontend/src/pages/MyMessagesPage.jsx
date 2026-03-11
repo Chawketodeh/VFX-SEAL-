@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { FiInbox, FiMessageSquare, FiFileText } from "react-icons/fi";
+import { useNotifications } from "../context/NotificationContext";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -10,6 +11,7 @@ function formatDate(value) {
 
 export default function MyMessagesPage() {
   const location = useLocation();
+  const { fetchNotifications } = useNotifications();
   const [contactMessages, setContactMessages] = useState([]);
   const [auditRequests, setAuditRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,8 @@ export default function MyMessagesPage() {
             : message,
         ),
       );
+
+      await fetchNotifications();
     } catch (err) {
       console.error("Mark studio message read error:", err);
     } finally {
@@ -76,7 +80,6 @@ export default function MyMessagesPage() {
   };
 
   const handleMessageOpen = (messageId) => {
-    console.log("Opening message:", messageId);
     setSelectedMessageId(messageId);
     markMessageAsRead(messageId);
   };
@@ -174,6 +177,8 @@ export default function MyMessagesPage() {
           studioReadAt: message.studioReadAt || new Date().toISOString(),
         })),
       );
+
+      await fetchNotifications();
     } catch (err) {
       console.error("Mark all studio messages read error:", err);
     }
@@ -268,9 +273,6 @@ export default function MyMessagesPage() {
                           key={msg._id}
                           id={`user-message-${msg._id}`}
                           onClick={() => handleMessageOpen(msg._id)}
-                          onMouseDown={() =>
-                            console.log("Message card mouse down:", msg._id)
-                          }
                           style={{
                             cursor: "pointer",
                             pointerEvents: "auto",
@@ -298,7 +300,9 @@ export default function MyMessagesPage() {
                           </div>
 
                           <p className="admin-message-body admin-message-body-truncate">
-                            {msg.message}
+                            {msg.senderType === "ADMIN" && msg.adminReply
+                              ? msg.adminReply
+                              : msg.message}
                           </p>
                         </button>
                       );
@@ -328,12 +332,30 @@ export default function MyMessagesPage() {
                         </span>
                       </div>
 
-                      <p className="admin-message-body">{selectedMessage.message}</p>
+                      <p className="admin-message-body">
+                        {selectedMessage.senderType === "ADMIN" &&
+                        selectedMessage.adminReply
+                          ? selectedMessage.adminReply
+                          : selectedMessage.message}
+                      </p>
 
                       {selectedMessage.senderType === "ADMIN" ? (
                         <div className="admin-message-reply">
-                          <strong>Admin message</strong>
-                          <p>This message was sent directly by admin/VOE.</p>
+                          <strong>
+                            {selectedMessage.adminReply
+                              ? "Admin reply"
+                              : "Admin message"}
+                          </strong>
+                          <p>
+                            {selectedMessage.adminReply
+                              ? "This is an admin reply to your earlier message."
+                              : "This message was sent directly by admin/VOE."}
+                          </p>
+                          {selectedMessage.repliedAt && (
+                            <small>
+                              Replied on {formatDate(selectedMessage.repliedAt)}
+                            </small>
+                          )}
                         </div>
                       ) : selectedMessage.adminReply ? (
                         <div className="admin-message-reply">
