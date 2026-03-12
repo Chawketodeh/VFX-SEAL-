@@ -1167,27 +1167,23 @@ export default function AdminDashboard() {
                       return (
                         <button
                           type="button"
-                          className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                          className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${selectedMessageIds.includes(msg._id) ? "message-card-selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
                           key={msg._id}
                           onClick={() => setSelectedMessage(msg)}
                           id={`admin-message-${msg._id}`}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-start",
-                              marginBottom: "var(--space-xs)",
-                            }}
-                          >
+                          <div className="message-select-box" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
+                              id={`checkbox-${msg._id}`}
                               checked={selectedMessageIds.includes(msg._id)}
-                              onClick={(event) => event.stopPropagation()}
                               onChange={() =>
                                 handleToggleMessageSelection(msg._id)
                               }
                               aria-label={`Select message ${msg.subject}`}
+                              className="message-checkbox"
                             />
+                            <label htmlFor={`checkbox-${msg._id}`} className="message-checkbox-label" aria-hidden="true" />
                           </div>
                           <div className="admin-message-header">
                             <div>

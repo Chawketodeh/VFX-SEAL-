@@ -2434,6 +2434,89 @@ input[type="checkbox"]:checked + .checkmark::after {
   line-height: 1.4;
 }
 
+/* ===== Message Selection Checkbox Styling ===== */
+.message-select-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-right: var(--space-md);
+  margin-bottom: var(--space-md);
+  pointer-events: auto;
+}
+
+.message-checkbox {
+  display: none;
+  pointer-events: auto;
+}
+
+.message-checkbox-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 2px solid var(--glass-border-hover);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  pointer-events: auto;
+}
+
+.message-checkbox-label:hover {
+  border-color: var(--accent);
+  transform: scale(1.05);
+  background: rgba(212, 169, 74, 0.08);
+  box-shadow: 0 0 8px rgba(212, 169, 74, 0.15);
+}
+
+.message-checkbox:checked + .message-checkbox-label {
+  border-color: #d4a94a;
+  background: #d4a94a;
+  box-shadow: 0 0 12px rgba(212, 169, 74, 0.3);
+}
+
+.message-checkbox:checked + .message-checkbox-label::after {
+  content: '✓';
+  position: absolute;
+  color: var(--bg-primary);
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.message-checkbox:focus + .message-checkbox-label {
+  outline: 2px solid #d4a94a;
+  outline-offset: 2px;
+}
+
+/* ===== Selected Message Card Styling ===== */
+.admin-message-card.message-card-selected {
+  border-color: #d4a94a;
+  background: linear-gradient(
+    135deg,
+    rgba(212, 169, 74, 0.08) 0%,
+    rgba(212, 169, 74, 0.04) 100%
+  );
+  box-shadow: 0 0 0 1px rgba(212, 169, 74, 0.3), inset 0 0 0 1px rgba(212, 169, 74, 0.1);
+}
+
+.admin-message-selectable:hover:not(.message-card-selected) {
+  transform: translateY(-2px);
+  border-color: rgba(212, 169, 74, 0.2);
+}
+
+/* Enhanced hover state for selected cards */
+.admin-message-card.message-card-selected:hover {
+  box-shadow: 0 0 0 1px rgba(212, 169, 74, 0.4), inset 0 0 0 1px rgba(212, 169, 74, 0.15);
+  transform: translateY(-1px);
+}
+
 .terms-link {
   color: var(--accent);
   text-decoration: underline;
