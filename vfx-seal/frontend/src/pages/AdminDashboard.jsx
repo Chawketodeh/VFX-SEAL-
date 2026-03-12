@@ -55,6 +55,7 @@ export default function AdminDashboard() {
   const [editStudioModalOpen, setEditStudioModalOpen] = useState(false);
   const [selectedStudio, setSelectedStudio] = useState(null);
   const [deleteMessageTarget, setDeleteMessageTarget] = useState(null);
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
 
   const getMessagesEndpoint = () => {
     const params = messageFilter ? `?status=${messageFilter}` : "";
@@ -81,6 +82,9 @@ export default function AdminDashboard() {
     });
     setMessages(nextMessages);
     setAdminUnreadCount(nextUnread);
+    setSelectedMessageIds((prev) =>
+      prev.filter((id) => nextMessages.some((message) => message._id === id)),
+    );
 
     if (nextMessages.length === 0) {
       setSelectedMessage(null);
@@ -158,6 +162,11 @@ export default function AdminDashboard() {
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
         setAdminUnreadCount(data.unreadCount || 0);
+        setSelectedMessageIds((prev) =>
+          prev.filter((id) =>
+            (data.messages || []).some((message) => message._id === id),
+          ),
+        );
         if (data.messages?.length > 0) {
           setSelectedMessage((prev) =>
             prev
@@ -206,6 +215,11 @@ export default function AdminDashboard() {
         const { data } = await api.get(`/contact/admin/messages${params}`);
         setMessages(data.messages);
         setAdminUnreadCount(data.unreadCount || 0);
+        setSelectedMessageIds((prev) =>
+          prev.filter((id) =>
+            (data.messages || []).some((message) => message._id === id),
+          ),
+        );
         if (data.messages?.length > 0) {
           setSelectedMessage((prev) =>
             prev
@@ -363,6 +377,45 @@ export default function AdminDashboard() {
       setDeleteMessageTarget(null);
     } catch (err) {
       alert("Failed to delete message");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleMessageSelection = (messageId) => {
+    setSelectedMessageIds((prev) =>
+      prev.includes(messageId)
+        ? prev.filter((id) => id !== messageId)
+        : [...prev, messageId],
+    );
+  };
+
+  const handleDeleteSelectedMessages = async () => {
+    if (selectedMessageIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Delete ${selectedMessageIds.length} selected message(s)?`,
+    );
+    if (!confirmed) return;
+
+    setActionLoading("messages-batch-delete");
+    try {
+      await api.delete("/contact/admin/messages/batch-delete", {
+        data: { ids: selectedMessageIds },
+      });
+
+      const deletedSet = new Set(selectedMessageIds);
+      setMessages((prev) =>
+        prev.filter((message) => !deletedSet.has(message._id)),
+      );
+      setSelectedMessageIds([]);
+      setSelectedMessage((prev) => {
+        if (!prev || deletedSet.has(prev._id)) return null;
+        return prev;
+      });
+      await fetchData();
+    } catch (err) {
+      alert("Failed to delete selected messages");
     } finally {
       setActionLoading(null);
     }
@@ -1081,6 +1134,19 @@ export default function AdminDashboard() {
               >
                 New Message
               </button>
+
+              {selectedMessageIds.length > 0 && (
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleDeleteSelectedMessages}
+                  disabled={actionLoading === "messages-batch-delete"}
+                  id="delete-selected-messages-btn"
+                >
+                  {actionLoading === "messages-batch-delete"
+                    ? "Deleting..."
+                    : `Delete Selected (${selectedMessageIds.length})`}
+                </button>
+              )}
             </div>
 
             {loading ? (
@@ -1106,6 +1172,23 @@ export default function AdminDashboard() {
                           onClick={() => setSelectedMessage(msg)}
                           id={`admin-message-${msg._id}`}
                         >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-start",
+                              marginBottom: "var(--space-xs)",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedMessageIds.includes(msg._id)}
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={() =>
+                                handleToggleMessageSelection(msg._id)
+                              }
+                              aria-label={`Select message ${msg.subject}`}
+                            />
+                          </div>
                           <div className="admin-message-header">
                             <div>
                               <div className="admin-message-studio">

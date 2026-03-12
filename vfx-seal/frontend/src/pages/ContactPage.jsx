@@ -5,7 +5,7 @@ import api from "../api/client";
 import PublicNavbar from "../components/PublicNavbar";
 
 export default function ContactPage() {
-  const { isLoggedIn, token } = useAuth();
+  const { isLoggedIn, isAdmin, token } = useAuth();
   const [form, setForm] = useState({
     firstName: "",
     email: "",
@@ -44,12 +44,31 @@ export default function ContactPage() {
     try {
       // Include Authorization header if user is logged in
       const headers = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      const authToken = token || localStorage.getItem("vfxseal_token");
+      const storedUser = JSON.parse(
+        localStorage.getItem("vfxseal_user") || "{}",
+      );
+      const isAdminSender = isAdmin || storedUser?.role === "ADMIN";
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
       }
-      await api.post("/contact", form, { headers });
+      if (isAdminSender) {
+        headers["X-VFX-Role-Hint"] = "ADMIN";
+      }
+      const payload = {
+        firstName: form.firstName,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      };
+      await api.post("/contact", payload, { headers });
       setSuccess(true);
-      setForm({ firstName: "", email: "", subject: "", message: "" });
+      setForm({
+        firstName: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
     } catch (err) {
       const errorMessage =
         err.displayMessage ||

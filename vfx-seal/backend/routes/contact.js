@@ -117,7 +117,18 @@ router.post("/", async (req, res) => {
   try {
     // Identify optional authenticated user BEFORE rate-limit so admins can bypass it
     const optionalUser = await getOptionalUser(req);
-    const isAdmin = optionalUser?.role === "ADMIN";
+    const normalizedRole = String(optionalUser?.role || "")
+      .trim()
+      .toUpperCase();
+    const isAdmin = normalizedRole === "ADMIN";
+    const roleHint = String(req.headers["x-vfx-role-hint"] || "").toUpperCase();
+
+    if (roleHint === "ADMIN" && !isAdmin) {
+      return res.status(401).json({
+        message:
+          "Admin authentication missing or expired. Please sign in again and retry.",
+      });
+    }
 
     const ip = req.ip || req.connection?.remoteAddress || "unknown";
     if (!isAdmin && !checkRateLimit(ip)) {
@@ -175,8 +186,73 @@ router.post("/", async (req, res) => {
     const linkedStudioId =
       optionalUser && optionalUser.role === "STUDIO" ? optionalUser._id : null;
 
+    // ── CASE 1: ADMIN sending from Contact page (single recipient only) ──
+    if (isAdmin) {
+      const selectedStudio = await User.findOne({
+        email: safeEmail,
+        role: "STUDIO",
+        status: "APPROVED",
+      }).select("_id name email company");
+
+      if (!selectedStudio) {
+        return res.status(404).json({
+          message:
+            "No approved studio account found for this email. Use the target studio account email.",
+        });
+      }
+
+      const contactMessage = await ContactMessage.create({
+        direction: "OUTBOUND",
+        senderType: "ADMIN",
+        senderId: optionalUser._id,
+        senderName: optionalUser.name || "Admin",
+        senderEmail: optionalUser.email || "",
+        senderCompany: optionalUser.company || "Admin",
+        studioId: selectedStudio._id,
+        studioName: selectedStudio.name,
+        studioEmail: selectedStudio.email,
+        recipientId: selectedStudio._id,
+        recipientName: selectedStudio.name,
+        recipientEmail: selectedStudio.email,
+        recipientCompany: selectedStudio.company || "",
+        subject: safeSubject,
+        message: safeMessage,
+        status: "NEW",
+        adminReadAt: new Date(),
+        studioReadAt: null,
+      });
+
+      try {
+        const notification = await Notification.create({
+          userId: selectedStudio._id,
+          type: "NEW_CONTACT",
+          title: "Message from Admin",
+          message: `${safeSubject}`,
+          relatedId: contactMessage._id,
+          link: `/messages?messageId=${contactMessage._id}`,
+          read: false,
+        });
+
+        const io = req.app.get("io");
+        if (io) {
+          io.to(`user_${selectedStudio._id}`).emit(
+            "notification",
+            notification,
+          );
+        }
+      } catch (notifErr) {
+        console.error("Admin contact notification error:", notifErr.message);
+      }
+
+      return res.status(201).json({
+        message:
+          "Your message has been sent successfully. Our team will contact you shortly.",
+      });
+    }
+
+    // ── CASE 2: STUDIO or public user sending from Contact page ──
     // Store in database
-    const contactMessage = await ContactMessage.create({
+    const messageData = {
       direction: "INBOUND",
       senderType: "STUDIO",
       senderId: linkedStudioId,
@@ -190,7 +266,9 @@ router.post("/", async (req, res) => {
       message: safeMessage,
       adminReadAt: null,
       studioReadAt: new Date(),
-    });
+    };
+
+    const contactMessage = await ContactMessage.create(messageData);
 
     // Attempt to send email via Nodemailer
     try {
@@ -226,7 +304,7 @@ router.post("/", async (req, res) => {
       // Don't fail the request if email fails
     }
 
-    // Notify admins in-app
+    // Notify admins in-app for studio/public submission
     try {
       const admins = await User.find({ role: "ADMIN" });
       for (const admin of admins) {
@@ -237,6 +315,7 @@ router.post("/", async (req, res) => {
           message: `${safeName} (${safeEmail}): "${safeSubject}"`,
           relatedId: contactMessage._id,
           link: `/admin?tab=messages&messageId=${contactMessage._id}`,
+          read: false, // Explicitly set unread
         });
         const io = req.app.get("io");
         if (io) {
@@ -736,6 +815,34 @@ router.post("/admin/reply/:id", protect, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// ─ ADMIN: DELETE /api/contact/admin/messages/:id ─
+router.delete(
+  "/admin/messages/batch-delete",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { ids } = req.body || {};
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Please provide one or more message IDs" });
+      }
+
+      const result = await ContactMessage.deleteMany({ _id: { $in: ids } });
+
+      res.json({
+        message: "Messages deleted successfully",
+        deletedCount: result.deletedCount || 0,
+      });
+    } catch (error) {
+      console.error("Batch delete messages error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+);
 
 // ─ ADMIN: DELETE /api/contact/admin/messages/:id ─
 router.delete(
