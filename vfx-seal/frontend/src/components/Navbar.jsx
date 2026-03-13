@@ -152,7 +152,7 @@ export default function Navbar() {
     <>
       <nav className="navbar" id="main-navbar">
         <div className="navbar-inner">
-          <Link to={isAdmin ? "/admin" : "/"} className="navbar-brand">
+          <Link to={isAdmin ? "/" : "/"} className="navbar-brand">
             VFX <span className="accent">Seal</span>
           </Link>
 

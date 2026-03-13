@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/client";
 import {
   FiAward,
@@ -1172,7 +1172,10 @@ export default function AdminDashboard() {
                           onClick={() => setSelectedMessage(msg)}
                           id={`admin-message-${msg._id}`}
                         >
-                          <div className="message-select-box" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="message-select-box"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <input
                               type="checkbox"
                               id={`checkbox-${msg._id}`}
@@ -1183,7 +1186,11 @@ export default function AdminDashboard() {
                               aria-label={`Select message ${msg.subject}`}
                               className="message-checkbox"
                             />
-                            <label htmlFor={`checkbox-${msg._id}`} className="message-checkbox-label" aria-hidden="true" />
+                            <label
+                              htmlFor={`checkbox-${msg._id}`}
+                              className="message-checkbox-label"
+                              aria-hidden="true"
+                            />
                           </div>
                           <div className="admin-message-header">
                             <div>
@@ -1470,6 +1477,35 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <div className="container">
+          <div className="footer-inner">
+            <div className="footer-brand">
+              VFX <span className="accent">Seal</span>
+            </div>
+            <div className="footer-links">
+              <Link to="/">Home</Link>
+              <Link to="/contact">Contact</Link>
+            </div>
+            <div className="footer-copy">
+              <div className="footer-copyright">
+                © The Seal - All rights reserved
+              </div>
+              <div className="footer-legal">
+                <Link to="/terms" className="footer-legal-link">
+                  Terms & Conditions
+                </Link>
+                <span className="footer-separator">•</span>
+                <Link to="/privacy-policy" className="footer-legal-link">
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Edit Studio Modal */}
       <EditStudioModal

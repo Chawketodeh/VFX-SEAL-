@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ContactModal from "../components/ContactModal";
 import PublicNavbar from "../components/PublicNavbar";
@@ -361,6 +361,35 @@ export default function VendorsPage() {
           onClose={() => setContactOpen(false)}
         />
       </div>
+      {/* Footer */}
+      <footer className="home-footer">
+        <div className="container">
+          <div className="footer-inner">
+            <div className="footer-brand">
+              VFX <span className="accent">Seal</span>
+            </div>
+            <div className="footer-links">
+              <Link to="/">Home</Link>
+              <Link to="/contact">Contact</Link>
+              {!isLoggedIn && <Link to="/login">Login</Link>}
+            </div>
+            <div className="footer-copy">
+              <div className="footer-copyright">
+                © The Seal — All rights reserved
+              </div>
+              <div className="footer-legal">
+                <Link to="/terms" className="footer-legal-link">
+                  Terms & Conditions
+                </Link>
+                <span className="footer-separator">•</span>
+                <Link to="/privacy-policy" className="footer-legal-link">
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

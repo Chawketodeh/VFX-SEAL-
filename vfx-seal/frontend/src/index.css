@@ -4576,6 +4576,21 @@ input[type="checkbox"]:checked + .checkmark::after {
   border-top: 1px solid var(--glass-border);
 }
 
+/* Admin dashboard footer spacing: footer sits inside .page-wrapper there */
+.page-wrapper > .home-footer {
+  margin-top: var(--space-3xl);
+  padding: var(--space-lg) 0;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.page-wrapper > .home-footer .footer-inner {
+  gap: var(--space-sm);
+}
+
+.page-wrapper > .home-footer .footer-copy {
+  gap: 6px;
+}
+
 .footer-links {
   display: flex;
   gap: 24px; /* this fixes the buttons being too close */
