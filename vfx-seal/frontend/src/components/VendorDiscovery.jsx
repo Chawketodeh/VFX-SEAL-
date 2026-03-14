@@ -2,6 +2,21 @@ import { useState, useEffect } from "react";
 import VendorCarousel from "./VendorCarousel";
 import api from "../api/client";
 
+/**
+ * Parse a team-size string like "51-200", "200+", "1000+" into a sortable number.
+ * Returns the upper bound of ranges, or the number before "+".
+ */
+function parseTeamSize(str) {
+  if (!str) return 0;
+  const s = String(str);
+  const plusMatch = s.match(/(\d+)\+/);
+  if (plusMatch) return parseInt(plusMatch[1], 10);
+  const rangeMatch = s.match(/\d+-(\d+)/);
+  if (rangeMatch) return parseInt(rangeMatch[1], 10);
+  const numMatch = s.match(/\d+/);
+  return numMatch ? parseInt(numMatch[0], 10) : 0;
+}
+
 export default function VendorDiscovery() {
   const [vendorCategories, setVendorCategories] = useState({
     topRated: [],
@@ -16,8 +31,7 @@ export default function VendorDiscovery() {
   useEffect(() => {
     const fetchCategorizedVendors = async () => {
       try {
-        // Fetch all vendors with necessary data
-        const response = await api.get("/vendors?limit=100"); // Get more vendors for categorization
+        const response = await api.get("/odoo/vendors?limit=100");
         const vendors = response.data.vendors || [];
 
         if (vendors.length === 0) {
@@ -29,25 +43,24 @@ export default function VendorDiscovery() {
 
         // Categorize vendors
         const categorized = {
-          // Top Rated: Highest global scores (8.5+)
-          topRated: vendors
-            .filter((v) => v.globalScore >= 8.5)
-            .sort((a, b) => b.globalScore - a.globalScore)
+          // Top Rated: Sort by score descending, take top 12
+          topRated: [...vendors]
+            .sort((a, b) => (b.globalScore || 0) - (a.globalScore || 0))
             .slice(0, 12),
 
-          // Veterans: Studios founded before 2010
+          // Veterans: Oldest founded studios first
           veterans: vendors
-            .filter((v) => v.foundedYear && v.foundedYear < 2010)
+            .filter((v) => v.foundedYear)
             .sort((a, b) => a.foundedYear - b.foundedYear)
             .slice(0, 12),
 
-          // Big Team: Large and Medium studios
-          bigTeam: vendors
-            .filter((v) => ["Large", "Medium"].includes(v.size))
-            .sort((a, b) => {
-              const sizeOrder = { Large: 3, Medium: 2 };
-              return (sizeOrder[b.size] || 0) - (sizeOrder[a.size] || 0);
-            })
+          // Big Teams: Sort by parsed teamSize descending
+          bigTeam: [...vendors]
+            .sort(
+              (a, b) =>
+                parseTeamSize(b.teamSize || b.size) -
+                parseTeamSize(a.teamSize || a.size),
+            )
             .slice(0, 12),
 
           // New Studios: Founded in last 2-3 years

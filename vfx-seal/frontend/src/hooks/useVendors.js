@@ -70,44 +70,20 @@ export const useVendors = () => {
     [debouncedSearchTerm, activeFilters, pagination.page],
   );
 
-  // Fetch filters data (cached)
-  const fetchFilters = useCallback(async () => {
-    const cacheKey = "vendor-filters";
-    const cached = cache.get(cacheKey);
-
-    if (cached && !isExpired(cached.timestamp)) {
-      setFilters(cached.data);
-      return;
-    }
-
-    try {
-      const response = await api.get("/vendors", {
-        params: { filtersOnly: "true" },
-      });
-      const filterData = response.data.filters;
-      setFilters(filterData);
-
-      // Cache the result
-      cache.set(cacheKey, {
-        data: filterData,
-        timestamp: Date.now(),
-      });
-    } catch (error) {
-      console.error("Failed to fetch filters:", error);
-      setError("Failed to load filter options");
-    }
-  }, []);
-
   // Fetch vendors with caching
   const fetchVendors = useCallback(
     async (params = fetchParams) => {
       setLoading(true);
+      setError(null);
 
-      const cacheKey = getCacheKey("/vendors", params);
+      const cacheKey = getCacheKey("/odoo/vendors", params);
       const cached = cache.get(cacheKey);
 
       if (cached && !isExpired(cached.timestamp)) {
         setVendors(cached.data.vendors);
+        if (cached.data.filters) {
+          setFilters(cached.data.filters);
+        }
         setPagination({
           page: cached.data.page,
           totalPages: cached.data.totalPages,
@@ -122,10 +98,15 @@ export const useVendors = () => {
           Object.entries(params).filter(([_, value]) => value && value !== ""),
         );
 
-        const response = await api.get("/vendors", { params: cleanParams });
+        const response = await api.get("/odoo/vendors", {
+          params: cleanParams,
+        });
         const data = response.data;
 
         setVendors(data.vendors);
+        if (data.filters) {
+          setFilters(data.filters);
+        }
         setPagination({
           page: data.page,
           totalPages: data.totalPages,
@@ -139,6 +120,10 @@ export const useVendors = () => {
         });
       } catch (error) {
         console.error("Failed to fetch vendors:", error);
+        setError(
+          error?.response?.data?.message ||
+            "Failed to load vendors from Odoo service",
+        );
       } finally {
         setLoading(false);
       }
@@ -175,11 +160,6 @@ export const useVendors = () => {
       console.error("Failed to fetch feedback summaries:", error);
     }
   }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchFilters();
-  }, [fetchFilters]);
 
   // Fetch vendors when parameters change
   useEffect(() => {

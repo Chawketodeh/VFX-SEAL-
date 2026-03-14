@@ -15,6 +15,7 @@ const feedbackRoutes = require("./routes/feedbacks");
 const notificationRoutes = require("./routes/notifications");
 const contactRoutes = require("./routes/contact");
 const auditRequestRoutes = require("./routes/auditRequests");
+const odooRoutes = require("./routes/vendor.route");
 
 const app = express();
 const server = http.createServer(app);
@@ -112,6 +113,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/odoo", odooRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
