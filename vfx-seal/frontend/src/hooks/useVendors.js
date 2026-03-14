@@ -20,6 +20,7 @@ export const useDebounce = (value, delay) => {
 
 // Cache for API responses
 const cache = new Map();
+const inFlightRequests = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 const getCacheKey = (url, params) => {
@@ -98,9 +99,15 @@ export const useVendors = () => {
           Object.entries(params).filter(([_, value]) => value && value !== ""),
         );
 
-        const response = await api.get("/odoo/vendors", {
-          params: cleanParams,
-        });
+        let requestPromise = inFlightRequests.get(cacheKey);
+        if (!requestPromise) {
+          requestPromise = api.get("/odoo/vendors", {
+            params: cleanParams,
+          });
+          inFlightRequests.set(cacheKey, requestPromise);
+        }
+
+        const response = await requestPromise;
         const data = response.data;
 
         setVendors(data.vendors);
@@ -125,6 +132,7 @@ export const useVendors = () => {
             "Failed to load vendors from Odoo service",
         );
       } finally {
+        inFlightRequests.delete(cacheKey);
         setLoading(false);
       }
     },

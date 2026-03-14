@@ -106,11 +106,14 @@ export default function VendorsPage() {
   };
 
   return (
-    <div className="vendors-page">
+    <div
+      className="vendors-page"
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
       {/* Public Navbar for non-logged-in users */}
       {!isLoggedIn && <PublicNavbar />}
 
-      <div className="page-wrapper">
+      <div className="page-wrapper" style={{ flex: 1 }}>
         <div className="container">
           <div className="vendors-header slide-up">
             <div className="vendors-header-top">

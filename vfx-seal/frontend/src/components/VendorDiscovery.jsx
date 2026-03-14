@@ -23,7 +23,6 @@ export default function VendorDiscovery() {
     veterans: [],
     bigTeam: [],
     newStudios: [],
-    regions: {},
     loading: true,
     error: null,
   });
@@ -69,24 +68,9 @@ export default function VendorDiscovery() {
             .sort((a, b) => b.foundedYear - a.foundedYear)
             .slice(0, 12),
 
-          // Group by regions for regional discovery
-          regions: vendors.reduce((acc, vendor) => {
-            const region = getRegionFromCountry(vendor.country);
-            if (!acc[region]) acc[region] = [];
-            acc[region].push(vendor);
-            return acc;
-          }, {}),
-
           loading: false,
           error: null,
         };
-
-        // Sort regional vendors by score and limit to top 8 per region
-        Object.keys(categorized.regions).forEach((region) => {
-          categorized.regions[region] = categorized.regions[region]
-            .sort((a, b) => b.globalScore - a.globalScore)
-            .slice(0, 8);
-        });
 
         setVendorCategories(categorized);
       } catch (error) {
@@ -101,44 +85,6 @@ export default function VendorDiscovery() {
 
     fetchCategorizedVendors();
   }, []);
-
-  // Helper function to map countries to regions
-  const getRegionFromCountry = (country) => {
-    const regionMap = {
-      "United States": "North America",
-      Canada: "North America",
-      Mexico: "North America",
-
-      "United Kingdom": "Europe",
-      France: "Europe",
-      Germany: "Europe",
-      Spain: "Europe",
-      Italy: "Europe",
-      Netherlands: "Europe",
-      Belgium: "Europe",
-      Sweden: "Europe",
-      Norway: "Europe",
-      Denmark: "Europe",
-      Finland: "Europe",
-
-      Australia: "Asia Pacific",
-      "New Zealand": "Asia Pacific",
-      Japan: "Asia Pacific",
-      "South Korea": "Asia Pacific",
-      Singapore: "Asia Pacific",
-      India: "Asia Pacific",
-      China: "Asia Pacific",
-      Thailand: "Asia Pacific",
-      Malaysia: "Asia Pacific",
-
-      Brazil: "South America",
-      Argentina: "South America",
-      Chile: "South America",
-      Colombia: "South America",
-    };
-
-    return regionMap[country] || "Other";
-  };
 
   if (vendorCategories.loading) {
     return (
@@ -225,20 +171,6 @@ export default function VendorDiscovery() {
               category="newStudios"
             />
           )}
-
-          {/* Regional Carousels */}
-          {Object.entries(vendorCategories.regions)
-            .filter(([region, vendors]) => vendors.length >= 3) // Only show regions with 3+ vendors
-            .sort(([, a], [, b]) => b.length - a.length) // Sort by vendor count
-            .slice(0, 3) // Show top 3 regions only
-            .map(([region, vendors]) => (
-              <VendorCarousel
-                key={region}
-                title={region}
-                vendors={vendors}
-                category={`region-${region.toLowerCase().replace(" ", "-")}`}
-              />
-            ))}
         </div>
       </div>
     </section>

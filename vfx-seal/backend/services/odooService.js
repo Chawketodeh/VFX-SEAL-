@@ -12,9 +12,11 @@ const https = require("https");
 
 const AUTH_CACHE_MS = 10 * 60 * 1000;
 const FIELDS_CACHE_MS = 30 * 60 * 1000;
+const VENDORS_CACHE_MS = 60 * 1000;
 
 let authCache = { uid: null, at: 0 };
 let fieldsCache = { fields: null, at: 0 };
+let vendorsCache = { vendors: null, at: 0 };
 
 function invalidateAuthCache() {
   authCache = { uid: null, at: 0 };
@@ -22,6 +24,10 @@ function invalidateAuthCache() {
 
 function invalidateFieldsCache() {
   fieldsCache = { fields: null, at: 0 };
+}
+
+function invalidateVendorsCache() {
+  vendorsCache = { vendors: null, at: 0 };
 }
 
 function isAuthRelatedError(error) {
@@ -346,6 +352,10 @@ function mapRecord(record) {
 async function getVendors() {
   const { ODOO_DB, ODOO_API_KEY } = process.env;
 
+  if (vendorsCache.vendors && Date.now() - vendorsCache.at < VENDORS_CACHE_MS) {
+    return vendorsCache.vendors;
+  }
+
   const fetchOnce = async ({ refreshAuth = false } = {}) => {
     const uid = await authenticate(refreshAuth);
 
@@ -399,9 +409,17 @@ async function getVendors() {
   try {
     const records = await fetchOnce();
     console.log(`[Odoo] Fetched ${records.length} vendor record(s).`);
-    return records.map(mapRecord);
+    const mapped = records.map(mapRecord);
+    vendorsCache = { vendors: mapped, at: Date.now() };
+    return mapped;
   } catch (error) {
     if (!isAuthRelatedError(error)) {
+      if (vendorsCache.vendors) {
+        console.warn(
+          `[Odoo] Returning cached vendors due to fetch error: ${error.message}`,
+        );
+        return vendorsCache.vendors;
+      }
       throw error;
     }
 
@@ -411,12 +429,15 @@ async function getVendors() {
 
     invalidateAuthCache();
     invalidateFieldsCache();
+    invalidateVendorsCache();
 
     const records = await fetchOnce({ refreshAuth: true });
     console.log(
       `[Odoo] Fetched ${records.length} vendor record(s) after retry.`,
     );
-    return records.map(mapRecord);
+    const mapped = records.map(mapRecord);
+    vendorsCache = { vendors: mapped, at: Date.now() };
+    return mapped;
   }
 }
 
