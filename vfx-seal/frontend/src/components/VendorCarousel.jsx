@@ -3,19 +3,17 @@ import { Link } from "react-router-dom";
 import {
   FiChevronLeft,
   FiChevronRight,
-  FiAward,
-  FiCircle,
   FiMapPin,
   FiUsers,
 } from "react-icons/fi";
-import { FaTrophy } from "react-icons/fa";
+import badgeGold from "../assets/BADGE_VOE/Badges_01_VOE_transp.png";
+import badgeSilver from "../assets/BADGE_VOE/Badges_02_VOE_transp.png";
+import badgeCandidate from "../assets/BADGE_VOE/Badges_05_VOE_transp.png";
 
-const BADGE_ICONS = {
-  Gold: <FaTrophy className="badge-icon gold" />,
-  Silver: <FiAward className="badge-icon silver" />,
-  Bronze: <FiCircle className="badge-icon bronze" />,
-  Blue: <FiCircle className="badge-icon blue" />,
-  None: "—",
+const BADGE_IMAGES = {
+  Gold: badgeGold,
+  Silver: badgeSilver,
+  Candidate: badgeCandidate,
 };
 
 export default function VendorCarousel({ title, vendors, category }) {
@@ -57,13 +55,38 @@ export default function VendorCarousel({ title, vendors, category }) {
     }
   }, [vendors]);
 
-  const getBadgeType = (vendor) => {
-    // New logic: Blue for new studios (< 2 years), then Bronze/Silver/Gold based on validation
-    const currentYear = new Date().getFullYear();
-    const isNew = vendor.foundedYear && currentYear - vendor.foundedYear < 2;
+  const normalizeBadgeType = (badge) => {
+    const raw = String(badge || "")
+      .trim()
+      .toLowerCase();
+    if (raw === "gold") return "Gold";
+    if (raw === "silver") return "Silver";
+    if (raw === "candidate") return "Candidate";
+    return "None";
+  };
 
-    if (isNew) return "Blue";
-    return vendor.badgeVOE || "None";
+  const getBadgeType = (vendor) => {
+    return normalizeBadgeType(vendor?.badgeVOE);
+  };
+
+  const getBadgeStyleClass = (badgeType) => {
+    if (badgeType === "Candidate") return "none";
+    return badgeType.toLowerCase();
+  };
+
+  const renderBadgeVisual = (badgeType) => {
+    const src = BADGE_IMAGES[badgeType];
+    if (!src) return "—";
+    return (
+      <img
+        src={src}
+        alt={`${badgeType} badge`}
+        className={`badge-icon ${badgeType.toLowerCase()}`}
+        loading="lazy"
+        decoding="async"
+        style={{ width: "1em", height: "1em", objectFit: "contain" }}
+      />
+    );
   };
 
   const getTeamSizeNumber = (size) => {
@@ -74,6 +97,15 @@ export default function VendorCarousel({ title, vendors, category }) {
       Large: "200+",
     };
     return sizeMap[size] || size;
+  };
+
+  const handleVendorImageError = (e) => {
+    const img = e.currentTarget;
+    img.style.display = "none";
+    const fallback = img.nextElementSibling;
+    if (fallback) {
+      fallback.style.display = "flex";
+    }
   };
 
   if (!vendors || vendors.length === 0) {
@@ -117,7 +149,21 @@ export default function VendorCarousel({ title, vendors, category }) {
                   {/* Studio Logo/Avatar */}
                   <div className="carousel-vendor-logo">
                     {vendor.logo ? (
-                      <img src={vendor.logo} alt={vendor.name} />
+                      <>
+                        <img
+                          src={vendor.logo}
+                          alt={vendor.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={handleVendorImageError}
+                        />
+                        <span
+                          className="logo-placeholder"
+                          style={{ display: "none" }}
+                        >
+                          {vendor.name.charAt(0)}
+                        </span>
+                      </>
                     ) : (
                       <span className="logo-placeholder">
                         {vendor.name.charAt(0)}
@@ -140,7 +186,7 @@ export default function VendorCarousel({ title, vendors, category }) {
                     {/* VOE Score */}
                     <div className="carousel-score-container">
                       <div
-                        className={`carousel-score-badge ${badgeType.toLowerCase()}`}
+                        className={`carousel-score-badge ${getBadgeStyleClass(badgeType)}`}
                       >
                         <span className="score">
                           {vendor.globalScore?.toFixed(1) || "N/A"}
@@ -148,10 +194,10 @@ export default function VendorCarousel({ title, vendors, category }) {
                         <span className="max">/10</span>
                       </div>
                       <div
-                        className={`carousel-badge ${badgeType.toLowerCase()}`}
+                        className={`carousel-badge ${getBadgeStyleClass(badgeType)}`}
                       >
                         <span className="badge-icon-wrapper">
-                          {BADGE_ICONS[badgeType]}
+                          {renderBadgeVisual(badgeType)}
                         </span>
                         <span className="badge-text">{badgeType}</span>
                       </div>

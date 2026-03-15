@@ -8,16 +8,18 @@ import {
   VendorFilterSkeleton,
 } from "../components/VendorSkeleton";
 import { useVendors } from "../hooks/useVendors";
-import { FiAward, FiCircle, FiSearch, FiStar, FiMapPin } from "react-icons/fi";
-import { FaTrophy } from "react-icons/fa";
+import { FiSearch, FiStar, FiMapPin } from "react-icons/fi";
+import badgeGold from "../assets/BADGE_VOE/Badges_01_VOE_transp.png";
+import badgeSilver from "../assets/BADGE_VOE/Badges_02_VOE_transp.png";
+import badgeCandidate from "../assets/BADGE_VOE/Badges_05_VOE_transp.png";
 
-const BADGE_ICONS = {
-  Gold: <FaTrophy className="badge-icon gold" />,
-  Silver: <FiAward className="badge-icon silver" />,
-  Bronze: <FiCircle className="badge-icon bronze" />,
-  Blue: <FiCircle className="badge-icon blue" />,
-  None: "—",
+const BADGE_IMAGES = {
+  Gold: badgeGold,
+  Silver: badgeSilver,
+  Candidate: badgeCandidate,
 };
+
+const PAGE_SIZE = 20;
 
 export default function VendorsPage() {
   const navigate = useNavigate();
@@ -62,17 +64,40 @@ export default function VendorsPage() {
     updateSearch("");
   };
 
-  const badgeClass = (badge) => (badge || "none").toLowerCase();
+  const normalizeBadgeType = (badge) => {
+    const raw = String(badge || "")
+      .trim()
+      .toLowerCase();
+    if (raw === "gold") return "Gold";
+    if (raw === "silver") return "Silver";
+    if (raw === "candidate") return "Candidate";
+    return "None";
+  };
 
-  // Enhanced badge logic with Blue for new studios
+  const badgeClass = (badge) => {
+    const normalized = normalizeBadgeType(badge);
+    if (normalized === "Candidate") return "none";
+    return normalized.toLowerCase();
+  };
+
+  const renderBadgeVisual = (badgeType) => {
+    const src = BADGE_IMAGES[badgeType];
+    if (!src) return "—";
+    return (
+      <img
+        src={src}
+        alt={`${badgeType} badge`}
+        className={`badge-icon ${badgeType.toLowerCase()}`}
+        loading="lazy"
+        decoding="async"
+        style={{ width: "1em", height: "1em", objectFit: "contain" }}
+      />
+    );
+  };
+
   const getBadgeType = (vendor) => {
     if (!vendor) return "None";
-
-    const currentYear = new Date().getFullYear();
-    const isNew = vendor.foundedYear && currentYear - vendor.foundedYear < 2;
-
-    if (isNew) return "Blue";
-    return vendor.badgeVOE || "None";
+    return normalizeBadgeType(vendor.badgeVOE);
   };
 
   const renderStars = (rating) => {
@@ -103,6 +128,38 @@ export default function VendorsPage() {
       default:
         return "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 100%)";
     }
+  };
+
+  const handleVendorImageError = (e) => {
+    const img = e.currentTarget;
+    img.style.display = "none";
+    const fallback = img.nextElementSibling;
+    if (fallback) {
+      fallback.style.display = "flex";
+    }
+  };
+
+  const currentPage = pagination.page || 1;
+  const totalPages = pagination.totalPages || 1;
+  const totalVendors = pagination.total || 0;
+  const pageStart = totalVendors === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const pageEnd = Math.min(currentPage * PAGE_SIZE, totalVendors);
+
+  const getVisiblePages = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages = [1];
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    if (start > 2) pages.push("...");
+    for (let p = start; p <= end; p += 1) pages.push(p);
+    if (end < totalPages - 1) pages.push("...");
+
+    pages.push(totalPages);
+    return pages;
   };
 
   return (
@@ -210,7 +267,7 @@ export default function VendorsPage() {
                   {filters.badges && filters.badges.length > 0 && (
                     <div className="filter-group">
                       <div className="filter-group-title">VOE Badge</div>
-                      {["Gold", "Silver", "Bronze", "Blue", "None"]
+                      {["Gold", "Silver", "Candidate", "None"]
                         .filter((b) => filters.badges.includes(b))
                         .map((b) => (
                           <div
@@ -219,7 +276,7 @@ export default function VendorsPage() {
                             onClick={() => toggleFilter("badge", b)}
                           >
                             <span className="filter-checkbox" />
-                            {BADGE_ICONS[b]} {b}
+                            {renderBadgeVisual(b)} {b}
                           </div>
                         ))}
                     </div>
@@ -248,112 +305,192 @@ export default function VendorsPage() {
                   <p>Try adjusting your search or filters.</p>
                 </div>
               ) : (
-                <div className="netflix-grid">
-                  {vendors.map((vendor) => {
-                    const summary = feedbackSummaries[vendor._id] || {
-                      avgRating: 0,
-                      totalRatings: 0,
-                    };
-                    return (
+                <>
+                  <div className="netflix-grid">
+                    {vendors.map((vendor) => {
+                      const summary = feedbackSummaries[vendor._id] || {
+                        avgRating: 0,
+                        totalRatings: 0,
+                      };
+                      const badgeType = getBadgeType(vendor);
+                      return (
+                        <div
+                          className="netflix-card slide-up"
+                          key={vendor._id}
+                          onClick={() => navigate(`/vendors/${vendor.slug}`)}
+                          id={`vendor-${vendor.slug}`}
+                          style={{
+                            background: getCardGradient(badgeType),
+                          }}
+                        >
+                          {/* Hero Image / Logo */}
+                          <div className="netflix-card-hero">
+                            {vendor.logo ? (
+                              <>
+                                <img
+                                  src={vendor.logo}
+                                  alt={vendor.name}
+                                  className="netflix-card-img"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={handleVendorImageError}
+                                />
+                                <div
+                                  className="netflix-card-placeholder"
+                                  style={{ display: "none" }}
+                                >
+                                  <span>{vendor.name.charAt(0)}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="netflix-card-placeholder">
+                                <span>{vendor.name.charAt(0)}</span>
+                              </div>
+                            )}
+                            <div className="netflix-card-overlay">
+                              <span
+                                className={`voe-badge ${badgeClass(badgeType)}`}
+                              >
+                                <span className="voe-badge-icon">
+                                  {renderBadgeVisual(badgeType)}
+                                </span>
+                                {badgeType}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="netflix-card-body">
+                            <h3 className="netflix-card-name">{vendor.name}</h3>
+                            <div className="netflix-card-meta">
+                              <span>
+                                <FiMapPin size={14} /> {vendor.country}
+                              </span>
+                              <span className="vendor-meta-dot" />
+                              <span>{vendor.size}</span>
+                            </div>
+
+                            {vendor.shortDescription && (
+                              <p className="netflix-card-desc">
+                                {vendor.shortDescription}
+                              </p>
+                            )}
+
+                            {vendor.services?.length > 0 && (
+                              <div className="netflix-card-services">
+                                {vendor.services.slice(0, 3).map((s) => (
+                                  <span className="service-tag" key={s}>
+                                    {s}
+                                  </span>
+                                ))}
+                                {vendor.services.length > 3 && (
+                                  <span
+                                    className="service-tag"
+                                    style={{ opacity: 0.6 }}
+                                  >
+                                    +{vendor.services.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="netflix-card-footer">
+                              <div className="netflix-card-score">
+                                <div className="netflix-score-ring">
+                                  <span className="netflix-score-val">
+                                    {vendor.globalScore?.toFixed(1)}
+                                  </span>
+                                </div>
+                                <span className="netflix-score-label">VOE</span>
+                              </div>
+                              <div className="netflix-card-rating">
+                                {summary.totalRatings > 0 ? (
+                                  <>
+                                    {renderStars(summary.avgRating)}
+                                    <span className="netflix-rating-info">
+                                      {summary.avgRating.toFixed(1)} (
+                                      {summary.totalRatings})
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="netflix-no-reviews">
+                                    No reviews yet
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div
+                      style={{
+                        marginTop: "var(--space-xl)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "var(--space-md)",
+                      }}
+                    >
+                      <div className="vendors-count">
+                        Showing {pageStart}-{pageEnd} of {totalVendors}
+                      </div>
+
                       <div
-                        className="netflix-card slide-up"
-                        key={vendor._id}
-                        onClick={() => navigate(`/vendors/${vendor.slug}`)}
-                        id={`vendor-${vendor.slug}`}
                         style={{
-                          background: getCardGradient(getBadgeType(vendor)),
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "var(--space-sm)",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
                         }}
                       >
-                        {/* Hero Image / Logo */}
-                        <div className="netflix-card-hero">
-                          {vendor.logo ? (
-                            <img
-                              src={vendor.logo}
-                              alt={vendor.name}
-                              className="netflix-card-img"
-                            />
-                          ) : (
-                            <div className="netflix-card-placeholder">
-                              <span>{vendor.name.charAt(0)}</span>
-                            </div>
-                          )}
-                          <div className="netflix-card-overlay">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => changePage(currentPage - 1)}
+                          disabled={currentPage <= 1 || loading}
+                        >
+                          Previous
+                        </button>
+
+                        {getVisiblePages().map((pageNum, idx) =>
+                          pageNum === "..." ? (
                             <span
-                              className={`voe-badge ${badgeClass(getBadgeType(vendor))}`}
+                              key={`ellipsis-${idx}`}
+                              style={{ color: "var(--text-muted)" }}
                             >
-                              <span className="voe-badge-icon">
-                                {BADGE_ICONS[getBadgeType(vendor)] || "—"}
-                              </span>
-                              {getBadgeType(vendor)}
+                              ...
                             </span>
-                          </div>
-                        </div>
+                          ) : (
+                            <button
+                              key={pageNum}
+                              className={
+                                pageNum === currentPage
+                                  ? "btn btn-primary"
+                                  : "btn btn-secondary"
+                              }
+                              onClick={() => changePage(pageNum)}
+                              disabled={loading}
+                            >
+                              {pageNum}
+                            </button>
+                          ),
+                        )}
 
-                        {/* Content */}
-                        <div className="netflix-card-body">
-                          <h3 className="netflix-card-name">{vendor.name}</h3>
-                          <div className="netflix-card-meta">
-                            <span>
-                              <FiMapPin size={14} /> {vendor.country}
-                            </span>
-                            <span className="vendor-meta-dot" />
-                            <span>{vendor.size}</span>
-                          </div>
-
-                          {vendor.shortDescription && (
-                            <p className="netflix-card-desc">
-                              {vendor.shortDescription}
-                            </p>
-                          )}
-
-                          {vendor.services?.length > 0 && (
-                            <div className="netflix-card-services">
-                              {vendor.services.slice(0, 3).map((s) => (
-                                <span className="service-tag" key={s}>
-                                  {s}
-                                </span>
-                              ))}
-                              {vendor.services.length > 3 && (
-                                <span
-                                  className="service-tag"
-                                  style={{ opacity: 0.6 }}
-                                >
-                                  +{vendor.services.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="netflix-card-footer">
-                            <div className="netflix-card-score">
-                              <div className="netflix-score-ring">
-                                <span className="netflix-score-val">
-                                  {vendor.globalScore?.toFixed(1)}
-                                </span>
-                              </div>
-                              <span className="netflix-score-label">VOE</span>
-                            </div>
-                            <div className="netflix-card-rating">
-                              {summary.totalRatings > 0 ? (
-                                <>
-                                  {renderStars(summary.avgRating)}
-                                  <span className="netflix-rating-info">
-                                    {summary.avgRating.toFixed(1)} (
-                                    {summary.totalRatings})
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="netflix-no-reviews">
-                                  No reviews yet
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => changePage(currentPage + 1)}
+                          disabled={currentPage >= totalPages || loading}
+                        >
+                          Next
+                        </button>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  )}
+                </>
               )}
             </main>
           </div>
