@@ -202,8 +202,7 @@ router.get("/stats", async (req, res) => {
 // PUT /api/admin/users/:id — update studio profile
 router.put("/users/:id", async (req, res) => {
   try {
-    const { name, email, company, country, roleInCompany, linkedin, status } =
-      req.body;
+    const { name, email, company, country, roleInCompany, linkedin } = req.body;
 
     // Find the studio user
     const user = await User.findById(req.params.id);
@@ -244,14 +243,6 @@ router.put("/users/:id", async (req, res) => {
       }
     }
 
-    // Validate status if provided
-    if (
-      status &&
-      !["PENDING", "APPROVED", "REJECTED", "BLOCKED"].includes(status)
-    ) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
     // Update user fields
     user.name = name.trim();
     user.email = email.toLowerCase().trim();
@@ -259,7 +250,6 @@ router.put("/users/:id", async (req, res) => {
     user.country = country.trim();
     if (roleInCompany) user.roleInCompany = roleInCompany.trim();
     if (linkedin !== undefined) user.linkedin = linkedin.trim();
-    if (status) user.status = status;
 
     await user.save();
 

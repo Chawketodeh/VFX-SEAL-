@@ -25,7 +25,6 @@ export default function EditStudioModal({
     country: "",
     roleInCompany: "",
     linkedin: "",
-    status: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -41,7 +40,6 @@ export default function EditStudioModal({
         country: studio.country || "",
         roleInCompany: studio.roleInCompany || "",
         linkedin: studio.linkedin || "",
-        status: studio.status || "",
       });
       setError("");
       setSuccess("");
@@ -198,28 +196,6 @@ export default function EditStudioModal({
                 className="form-input"
                 placeholder="https://linkedin.com/in/yourprofile"
               />
-            </div>
-          </div>
-
-          <div className="status-section">
-            <div className="form-group">
-              <label htmlFor="status">
-                <FiSettings className="form-icon" />
-                Account Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="form-input form-select"
-                required
-              >
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="BLOCKED">Blocked</option>
-              </select>
             </div>
           </div>
 
