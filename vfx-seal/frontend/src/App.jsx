@@ -9,6 +9,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PendingPage from "./pages/PendingPage";
+import ApprovalAccessPage from "./pages/ApprovalAccessPage";
 import VendorsPage from "./pages/VendorsPage";
 import VendorDetailPage from "./pages/VendorDetailPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -90,6 +91,11 @@ export default function App() {
           element={
             isLoggedIn ? <Navigate to="/vendors" replace /> : <RegisterPage />
           }
+        />
+
+        <Route
+          path="/approval-access/:token"
+          element={<ApprovalAccessPage />}
         />
 
         {/* Password Reset Routes - Public */}

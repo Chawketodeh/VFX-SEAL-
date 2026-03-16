@@ -51,12 +51,13 @@ export default function LoginPage() {
               VFX <span className="accent">Seal</span>
             </div>
           </Link>
-          <p className="auth-subtitle">Sign in to your studio account</p>
+          <p className="auth-subtitle">Sign in to your professional account</p>
         </div>
 
         {registrationSuccess && (
           <div className="alert alert-success">
-            ✅ Registration successful! Your account is pending approval.
+            Registration successful. Please check your mailbox. You will receive
+            an email once your account has been approved.
           </div>
         )}
 
@@ -121,7 +122,7 @@ export default function LoginPage() {
 
         <div className="auth-footer">
           Don't have an account?{" "}
-          <Link to="/register">Register your studio</Link>
+          <Link to="/register">Register your profile</Link>
         </div>
       </div>
     </div>

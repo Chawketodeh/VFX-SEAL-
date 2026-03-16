@@ -47,6 +47,7 @@ export default function RegisterPage() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const gmailRegex = /^[^\s@]+@gmail\.com$/i;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -78,6 +79,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!gmailRegex.test(form.email)) {
+      setError("Please register with a valid Gmail address");
+      return;
+    }
+
     setLoading(true);
     try {
       await register(form);
@@ -105,7 +111,7 @@ export default function RegisterPage() {
             </div>
           </Link>
           <p className="auth-subtitle">
-            Please fill in the following information to create your account:
+            Create your professional account to request trusted profile access:
           </p>
         </div>
 
@@ -129,7 +135,7 @@ export default function RegisterPage() {
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="reg-company">
-                Company *
+                Studio / Company *
               </label>
               <input
                 id="reg-company"
@@ -145,14 +151,14 @@ export default function RegisterPage() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="reg-email">
-              Professional Email *
+              Official Gmail *
             </label>
             <input
               id="reg-email"
               name="email"
               className="form-input"
               type="email"
-              placeholder="you@studio.com"
+              placeholder="yourname@gmail.com"
               value={form.email}
               onChange={handleChange}
               required

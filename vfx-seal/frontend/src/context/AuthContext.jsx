@@ -32,6 +32,15 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const loginWithApprovalToken = async (approvalToken) => {
+    const { data } = await api.post(`/auth/approval-login/${approvalToken}`);
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem("vfxseal_token", data.token);
+    localStorage.setItem("vfxseal_user", JSON.stringify(data.user));
+    return data.user;
+  };
+
   const forgotPassword = async (email) => {
     const { data } = await api.post("/auth/forgot-password", { email });
     return data;
@@ -87,6 +96,7 @@ export function AuthProvider({ children }) {
         token,
         loading,
         login,
+        loginWithApprovalToken,
         register,
         forgotPassword,
         resetPassword,

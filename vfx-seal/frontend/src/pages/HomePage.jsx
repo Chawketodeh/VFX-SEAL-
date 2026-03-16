@@ -5,10 +5,13 @@ import VendorDiscovery from "../components/VendorDiscovery";
 import sealLogo from "../assets/seal.png";
 import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
-import Confidentialitystep from "../assets/Confidentiality-step.jpg";
-import explorstep from "../assets/Explore-step.avif";
 import AssessorsSection from "../components/AssessorsSection";
 import aboutImage from "../assets/about-image.webp";
+
+const explorstep =
+  "https://images.unsplash.com/photo-1487014679447-9f8336841d58?auto=format&fit=crop&w=1200&q=80";
+const feedbackstep =
+  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80";
 
 export default function HomePage() {
   const { isLoggedIn, isAdmin, isApproved } = useAuth();
@@ -46,16 +49,15 @@ export default function HomePage() {
           <div className="hero-glow" />
         </div>
         <div className="hero-content">
-          <div className="hero-badge"> VFX Operational Excellence</div>
           <h1 className="hero-title">
             The <span className="hero-accent">Trusted </span> Gateway
             <br />
             to find VFX vendors.
           </h1>
           <p className="hero-subtitle">
-            VFX Seal is the definitive platform for VFX studios seeking
-            certified, assessed, and trusted vendor partners. Gain access to a
-            curated directory of VOE-certified vendors worldwide.
+            VFX Seal helps VFX professionals discover certified, assessed, and
+            trusted vendor partners. Explore in confidence and decide when to
+            activate your trusted professional profile.
           </p>
           <div className="hero-cta">
             <Link
@@ -65,11 +67,6 @@ export default function HomePage() {
               <span className="hero-btn-glow" />
               {isLoggedIn ? "Go to Dashboard" : "Join the Club"}
             </Link>
-            {!isLoggedIn && (
-              <Link to="/login" className="btn btn-outline btn-xl">
-                Sign In
-              </Link>
-            )}
           </div>
         </div>
         <div className="hero-visual">
@@ -130,30 +127,30 @@ export default function HomePage() {
               <div className="how-card-image">
                 <img
                   src={explorstep}
-                  alt="Modern architecture corridor"
+                  alt="Secure browsing and exploration interface"
                   className="step-image"
                 />
               </div>
-              <h3>Explore</h3>
+              <h3>Explore </h3>
               <p>
-                Discover certified VFX vendors through detailed profiles, VOE
-                scores, and independent audit reports. Your research and
-                activity remain strictly confidential.
+                Once approved, you can freely browse the VFX marketplace. Your
+                research and activity remain strictly confidential.
               </p>
             </div>
             <div className="how-card-enhanced">
               <div className="how-card-number">04</div>
               <div className="how-card-image">
                 <img
-                  src={Confidentialitystep}
-                  alt="Earth from space with city lights"
+                  src={feedbackstep}
+                  alt="Community communication and feedback exchange"
                   className="step-image"
                 />
               </div>
-              <h3>Confidence</h3>
+              <h3>Reach & 360° Feedback</h3>
               <p>
-                All information is strictly for your internal use and must not
-                be shared externally.
+                Reach out to vendors directly, outside the platform – no
+                intermediaries, no commissions – and contribute to the feedback
+                community.
               </p>
             </div>
           </div>
@@ -180,14 +177,13 @@ export default function HomePage() {
             <div className="vendor-showcase-grid">
               <div className="showcase-vendor-card locked-preview">
                 <div className="vendor-showcase-header">
-                  <div className="vendor-showcase-logo">IL</div>
+                  <div className="vendor-showcase-logo">JD</div>
                   <div className="vendor-showcase-info">
-                    <h3>ILM Studios</h3>
-                    <span className="vendor-location">San Francisco, USA</span>
+                    <h3 className="masked-vendor-name">John Doe Studio</h3>
+                    <span className="vendor-location">Los Angeles, USA</span>
                   </div>
-                  <div className="voe-score-badge gold">
-                    <span className="score">9.2</span>
-                    <span className="max">/10</span>
+                  <div className="voe-score-badge gold preview-stars-badge">
+                    <span className="star-rating-preview">★★★★★</span>
                   </div>
                 </div>
                 <div className="vendor-showcase-services">
@@ -206,14 +202,13 @@ export default function HomePage() {
 
               <div className="showcase-vendor-card locked-preview">
                 <div className="vendor-showcase-header">
-                  <div className="vendor-showcase-logo">DN</div>
+                  <div className="vendor-showcase-logo">NP</div>
                   <div className="vendor-showcase-info">
-                    <h3>DNEG</h3>
-                    <span className="vendor-location">London, UK</span>
+                    <h3 className="masked-vendor-name">North Pixel Studio</h3>
+                    <span className="vendor-location">Vancouver, Canada</span>
                   </div>
-                  <div className="voe-score-badge gold">
-                    <span className="score">8.9</span>
-                    <span className="max">/10</span>
+                  <div className="voe-score-badge gold preview-stars-badge">
+                    <span className="star-rating-preview">★★★★★</span>
                   </div>
                 </div>
                 <div className="vendor-showcase-services">
@@ -232,14 +227,13 @@ export default function HomePage() {
 
               <div className="showcase-vendor-card locked-preview">
                 <div className="vendor-showcase-header">
-                  <div className="vendor-showcase-logo">WE</div>
+                  <div className="vendor-showcase-logo">AL</div>
                   <div className="vendor-showcase-info">
-                    <h3>Wētā FX</h3>
-                    <span className="vendor-location">Wellington, NZ</span>
+                    <h3 className="masked-vendor-name">Alpha VFX Lab</h3>
+                    <span className="vendor-location">London, UK</span>
                   </div>
-                  <div className="voe-score-badge gold">
-                    <span className="score">9.5</span>
-                    <span className="max">/10</span>
+                  <div className="voe-score-badge gold preview-stars-badge">
+                    <span className="star-rating-preview">★★★★★</span>
                   </div>
                 </div>
                 <div className="vendor-showcase-services">
@@ -271,12 +265,9 @@ export default function HomePage() {
                   <Link to="/register" className="btn btn-primary-gold btn-lg">
                     Join the Club
                   </Link>
-                  <Link to="/login" className="btn btn-outline-premium btn-lg">
-                    Sign In
-                  </Link>
                 </div>
                 <p className="unlock-exclusivity">
-                  Exclusive access for approved studios and partners
+                  Exclusive access for approved professionals and partners
                 </p>
               </div>
             </div>
@@ -294,7 +285,7 @@ export default function HomePage() {
             <span className="section-tag">About</span>
             <h2 className="section-title">About The Seal</h2>
             <p className="section-subtitle">
-              The industry's most trusted vendor certification platform
+              The industry's trusted vendor platform
             </p>
           </div>
 
@@ -303,11 +294,18 @@ export default function HomePage() {
             <div className="about-content-column">
               {/* Highlight Introduction Box */}
               <div className="about-highlight-box">
+                {/* prettier-ignore */}
                 <p>
-                  The Seal is an exclusive platform designed specifically for
-                  VFX studio executives. Our mission is to connect you with the
-                  industry's top vendors, each certified through the VOE (VFX
-                  Operational Excellence) label.
+                  The Seal is an exclusive platform designed specifically for VFX studio executives. 
+
+                  </p>
+                <br />
+                <p>
+                  Our mission is to help you search, compare and evaluate VFX
+                  vendors with full transparency on the information displayed.
+                  It is the only platform where you can access VFX vendor
+                  profiles and see clearly what is verified, including
+                  VOE‑audited reports and additional company information.
                 </p>
               </div>
 
@@ -331,8 +329,8 @@ export default function HomePage() {
                     <h3>No-Paywall Access</h3>
                     <p>
                       Complete access to vendor profiles, scores, and reports at
-                      no cost. We believe quality information should be freely
-                      available to industry professionals.
+                      no cost for studios. We believe quality information should
+                      be freely available to industry professionals.
                     </p>
                   </div>
                 </div>
@@ -340,11 +338,12 @@ export default function HomePage() {
                 <div className="about-feature-item">
                   <div className="feature-separator"></div>
                   <div className="feature-content">
-                    <h3>Certified Vendor Network</h3>
+                    <h3>Verified & Certified Vendor Network</h3>
                     <p>
-                      Every vendor undergoes rigorous VOE assessment.
-                      Multi-category evaluation ensures you work with
-                      operationally excellent partners.
+                      The Seal brings together different levels of verification.
+                      VOE‑audited vendors are clearly identified as certified,
+                      while self‑assessed and non‑audited information is also
+                      available and transparently labelled.
                     </p>
                   </div>
                 </div>
@@ -376,11 +375,11 @@ export default function HomePage() {
                 <div className="about-feature-item">
                   <div className="feature-separator"></div>
                   <div className="feature-content">
-                    <h3>360° Improvement & Vendor Comparison</h3>
+                    <h3>360° Insight & Vendor Comparison</h3>
                     <p>
-                      Comprehensive scoring across all operational areas.
-                      Detailed breakdowns help you identify the perfect match
-                      for specific project requirements.
+                      Granular scoring and qualitative information across key
+                      operational areas help you benchmark vendors and identify
+                      the best match for each project.
                     </p>
                   </div>
                 </div>

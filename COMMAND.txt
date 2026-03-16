@@ -3,6 +3,10 @@ vfx-seal\backend>node server.js
 
 create Admin : 
 👤 Admin account created: admin@vfxseal.com / Admin123!
+
+create Admin GMAIL : 
+aminvfxseal@gmail.com / Admin123!
+ 
 command : 
 node seed.js
 

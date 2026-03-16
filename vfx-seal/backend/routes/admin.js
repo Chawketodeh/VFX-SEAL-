@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Feedback = require("../models/Feedback");
 const ContactMessage = require("../models/ContactMessage");
 const { protect, requireAdmin } = require("../middleware/auth");
+const { sendApprovalEmail } = require("../config/email");
 const router = express.Router();
 
 const unreadByAdminFilter = {
@@ -62,14 +63,34 @@ router.patch("/users/:id/approve", async (req, res) => {
     if (user.role === "ADMIN")
       return res.status(400).json({ message: "Cannot modify admin users" });
 
+    const previousStatus = user.status;
     user.status = "APPROVED";
     await user.save();
 
-    // Stub: Log welcome email
-    console.log(`📧 [EMAIL STUB] Welcome email sent to: ${user.email}`);
-    console.log(`   Subject: Your VFX Seal account has been approved!`);
+    try {
+      await sendApprovalEmail({
+        email: user.email,
+        firstName: user.name?.split(" ")?.[0],
+      });
 
-    res.json({ message: "User approved successfully", user });
+      return res.json({ message: "User approved successfully", user });
+    } catch (emailError) {
+      console.error("Approval email send failed:", emailError);
+      try {
+        user.status = previousStatus;
+        await user.save();
+      } catch (rollbackError) {
+        console.error(
+          "Failed to rollback user approval after email error:",
+          rollbackError,
+        );
+      }
+
+      return res.status(500).json({
+        message:
+          "Approval email could not be delivered. The account was not approved.",
+      });
+    }
   } catch (error) {
     console.error("Approve user error:", error);
     res.status(500).json({ message: "Server error" });
@@ -172,7 +193,6 @@ router.get("/stats", async (req, res) => {
       totalFeedbacks,
       newMessages,
     });
-
   } catch (error) {
     console.error("Admin stats error:", error);
     res.status(500).json({ message: "Server error" });

@@ -3,7 +3,10 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/User");
 const { protect } = require("../middleware/auth");
-const { sendPasswordResetEmail } = require("../config/email");
+const {
+  sendPasswordResetEmail,
+  sendNewRegistrationNotificationEmail,
+} = require("../config/email");
 const router = express.Router();
 
 // Generate JWT
@@ -12,6 +15,8 @@ const generateToken = (id) => {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 };
+
+const gmailRegex = /^[^\s@]+@gmail\.com$/i;
 
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
@@ -31,6 +36,12 @@ router.post("/register", async (req, res) => {
       return res
         .status(400)
         .json({ message: "All required fields must be provided" });
+    }
+
+    if (!gmailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Registration requires a valid Gmail address" });
     }
 
     // Check if email already exists
@@ -54,9 +65,20 @@ router.post("/register", async (req, res) => {
       status: "PENDING",
     });
 
-    // Stub: Log confirmation email
-    console.log(`📧 [EMAIL STUB] Confirmation email sent to: ${user.email}`);
-    console.log(`   Subject: Welcome to VFX Seal — Account Under Review`);
+    // Notify admin that a new account is pending review
+    try {
+      await sendNewRegistrationNotificationEmail({
+        adminEmail:
+          process.env.ADMIN_NOTIFICATION_EMAIL || process.env.EMAIL_USER,
+        user,
+      });
+    } catch (emailError) {
+      console.error(
+        "Failed to send admin registration notification:",
+        emailError,
+      );
+      // Continue successful registration even if email delivery fails.
+    }
 
     res.status(201).json({
       message:
@@ -104,6 +126,53 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error during login" });
+  }
+});
+
+// POST /api/auth/approval-login/:token
+router.post("/approval-login/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ message: "Access token is required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired approval link" });
+    }
+
+    if (decoded.purpose !== "approval-access") {
+      return res
+        .status(400)
+        .json({ message: "Invalid approval token purpose" });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.status !== "APPROVED") {
+      return res.status(403).json({ message: "Account is not approved yet" });
+    }
+
+    const authToken = generateToken(user._id);
+
+    return res.json({
+      token: authToken,
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    console.error("Approval login error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error during approval login" });
   }
 });
 

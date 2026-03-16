@@ -1464,6 +1464,27 @@ h4 { font-size: 1.125rem; }
   background: var(--bg-card-hover);
 }
 
+.admin-email-linkedin-block {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.admin-linkedin-inline {
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.admin-linkedin-inline:hover,
+.admin-linkedin-inline:focus-visible {
+  color: var(--accent-hover);
+  opacity: 0.95;
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -3186,6 +3207,9 @@ input[type="checkbox"]:checked + .checkmark::after {
   justify-content: center;
   padding: 120px var(--space-lg) 80px;
   overflow: hidden;
+  background: radial-gradient(circle, 
+    rgba(201, 163, 79, 0) 100%);
+  
 }
 
 .hero-particles {
@@ -3222,7 +3246,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid rgba(246, 231, 192, 0.12);
-   background: var(--bg-card);
+ background: #D3D3D3;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 
@@ -3239,11 +3263,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
-    rgba(201, 163, 79, 0.2) 0%, 
-    rgba(201, 163, 79, 0.04) 30%, 
-    rgba(201, 163, 79, 0.08) 70%, 
-    rgba(201, 163, 79, 0.2) 100%);
+  background: #D3D3D3;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -3257,11 +3277,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   transform: translate(-50%, -50%);
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, 
-    rgba(201, 163, 79, 0.15) 0%, 
-    rgba(201, 163, 79, 0.08) 40%, 
-    rgba(201, 163, 79, 0.03) 65%, 
-    transparent 85%);
+  background: #D3D3D3;
   filter: blur(35px);
   animation: glowMove 12s infinite ease-in-out;
   pointer-events: none;
@@ -3663,6 +3679,25 @@ input[type="checkbox"]:checked + .checkmark::after {
   padding: 6px 12px;
   border-radius: var(--radius-md);
   flex-shrink: 0;
+}
+
+.preview-stars-badge {
+  min-width: 86px;
+  justify-content: center;
+  padding: 8px 10px;
+}
+
+.star-rating-preview {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.masked-vendor-name {
+  filter: blur(1.4px);
+  opacity: 0.88;
 }
 
 .voe-score-badge.gold {
@@ -4460,11 +4495,19 @@ input[type="checkbox"]:checked + .checkmark::after {
   position: absolute;
   top: var(--space-md);
   right: var(--space-md);
-  font-size: 3rem;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.45rem;
   font-weight: 900;
-  color: var(--accent);
-  opacity: 0.1;
+  color: #ffffff;
+  background: radial-gradient(circle at 30% 30%, #f6e7c0 0%, #c79e68 55%, #9a6d3d 100%);
+  border: 1px solid rgba(246, 231, 192, 0.55);
+  box-shadow: 0 8px 24px rgba(199, 158, 104, 0.28);
   line-height: 1;
+  opacity: 1;
 }
 
 .how-card-icon {
@@ -4574,6 +4617,34 @@ input[type="checkbox"]:checked + .checkmark::after {
 .home-footer {
   padding: var(--space-xl) 0;
   border-top: 1px solid var(--glass-border);
+}
+
+.contact-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-page > .page-wrapper {
+  flex: 1;
+}
+
+.contact-page > .home-footer {
+  margin-top: auto;
+}
+
+.admin-dashboard-page {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-dashboard-content {
+  flex: 1;
+}
+
+.admin-dashboard-page .home-footer {
+  margin-top: auto;
 }
 
 /* Admin dashboard footer spacing: footer sits inside .page-wrapper there */
@@ -5341,10 +5412,18 @@ input, textarea, select { cursor: text; }
   position: absolute;
   top: var(--space-md);
   right: var(--space-md);
-  font-size: 2.5rem;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.5rem;
   font-weight: 900;
-  color: var(--accent);
-  opacity: 0.15;
+  color: #ffffff;
+  background: radial-gradient(circle at 30% 30%, #f6e7c0 0%, #c79e68 58%, #9a6d3d 100%);
+  border: 1px solid rgba(246, 231, 192, 0.55);
+  box-shadow: 0 8px 24px rgba(199, 158, 104, 0.28);
+  opacity: 1;
   line-height: 1;
 }
 

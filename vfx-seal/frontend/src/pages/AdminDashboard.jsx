@@ -26,6 +26,8 @@ const BADGE_ICONS = {
   None: "—",
 };
 
+const PLACEHOLDER_LINKEDIN_URL = "https://www.linkedin.com/in/YOUR-LINKEDIN";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -573,186 +575,256 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="page-wrapper">
-      <div className="container">
-        <h1 className="slide-up" style={{ marginBottom: "var(--space-lg)" }}>
-          Admin Dashboard
-        </h1>
+    <div className="admin-dashboard-page">
+      <div className="page-wrapper admin-dashboard-content">
+        <div className="container">
+          <h1 className="slide-up" style={{ marginBottom: "var(--space-lg)" }}>
+            Admin Dashboard
+          </h1>
 
-        {/* Stats */}
-        {stats && (
-          <div className="admin-stats fade-in">
-            <div className="stat-card">
-              <div className="stat-card-value">{stats.totalStudios}</div>
-              <div className="stat-card-label">Total Studios</div>
-            </div>
-            <div className="stat-card">
-              <div
-                className="stat-card-value"
-                style={{ color: "var(--warning)" }}
-              >
-                {stats.pendingStudios}
+          {/* Stats */}
+          {stats && (
+            <div className="admin-stats fade-in">
+              <div className="stat-card">
+                <div className="stat-card-value">{stats.totalStudios}</div>
+                <div className="stat-card-label">Total Studios</div>
               </div>
-              <div className="stat-card-label">Pending Approval</div>
-            </div>
-            <div className="stat-card">
-              <div
-                className="stat-card-value"
-                style={{ color: "var(--success)" }}
-              >
-                {stats.approvedStudios}
-              </div>
-              <div className="stat-card-label">Approved</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-value" style={{ color: "var(--info)" }}>
-                {stats.totalVendors}
-              </div>
-              <div className="stat-card-label">Vendors</div>
-            </div>
-            <div className="stat-card">
-              <div
-                className="stat-card-value"
-                style={{ color: "var(--accent)" }}
-              >
-                {stats.pendingFeedbacks}
-              </div>
-              <div className="stat-card-label">Pending Feedbacks</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-value" style={{ color: "#f97316" }}>
-                {adminUnreadCount}
-              </div>
-              <div className="stat-card-label">New Messages</div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="admin-tabs">
-          <button
-            className={`admin-tab ${activeTab === "studios" ? "active" : ""}`}
-            onClick={() => setActiveTab("studios")}
-            id="tab-studios"
-          >
-            <FiHome className="tab-icon" />
-            Studios
-          </button>
-          <button
-            className={`admin-tab ${activeTab === "vendors" ? "active" : ""}`}
-            onClick={() => setActiveTab("vendors")}
-            id="tab-vendors"
-          >
-            <FiPackage className="tab-icon" />
-            Vendors
-          </button>
-          <button
-            className={`admin-tab ${activeTab === "feedbacks" ? "active" : ""}`}
-            onClick={() => setActiveTab("feedbacks")}
-            id="tab-feedbacks"
-          >
-            <FiStar className="tab-icon" />
-            Feedbacks{" "}
-            {stats?.pendingFeedbacks > 0 && (
-              <span className="tab-badge">{stats.pendingFeedbacks}</span>
-            )}
-          </button>
-          <button
-            className={`admin-tab ${activeTab === "messages" ? "active" : ""}`}
-            onClick={() => setActiveTab("messages")}
-            id="tab-messages"
-          >
-            <FiMail className="tab-icon" />
-            Messages{" "}
-            {adminUnreadCount > 0 && (
-              <span className="tab-badge">{adminUnreadCount}</span>
-            )}
-          </button>
-        </div>
-
-        {/* Studios Tab */}
-        {activeTab === "studios" && (
-          <div className="fade-in">
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--space-sm)",
-                marginBottom: "var(--space-md)",
-                flexWrap: "wrap",
-              }}
-            >
-              {["", "PENDING", "APPROVED", "REJECTED"].map((f) => (
-                <button
-                  key={f}
-                  className={`btn btn-sm ${userFilter === f ? "btn-primary" : "btn-secondary"}`}
-                  onClick={() => setUserFilter(f)}
-                  id={`filter-${f || "all"}`}
+              <div className="stat-card">
+                <div
+                  className="stat-card-value"
+                  style={{ color: "var(--warning)" }}
                 >
-                  {f || "All"}
-                </button>
-              ))}
-            </div>
-
-            {loading ? (
-              <div className="loading">
-                <div className="spinner" />
+                  {stats.pendingStudios}
+                </div>
+                <div className="stat-card-label">Pending Approval</div>
               </div>
-            ) : (
-              <div className="admin-table-wrapper">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Company</th>
-                      <th>Email</th>
-                      <th>Country</th>
-                      <th>Status</th>
-                      <th>Registered</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.length === 0 ? (
+              <div className="stat-card">
+                <div
+                  className="stat-card-value"
+                  style={{ color: "var(--success)" }}
+                >
+                  {stats.approvedStudios}
+                </div>
+                <div className="stat-card-label">Approved</div>
+              </div>
+              <div className="stat-card">
+                <div
+                  className="stat-card-value"
+                  style={{ color: "var(--info)" }}
+                >
+                  {stats.totalVendors}
+                </div>
+                <div className="stat-card-label">Vendors</div>
+              </div>
+              <div className="stat-card">
+                <div
+                  className="stat-card-value"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {stats.pendingFeedbacks}
+                </div>
+                <div className="stat-card-label">Pending Feedbacks</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-value" style={{ color: "#f97316" }}>
+                  {adminUnreadCount}
+                </div>
+                <div className="stat-card-label">New Messages</div>
+              </div>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="admin-tabs">
+            <button
+              className={`admin-tab ${activeTab === "studios" ? "active" : ""}`}
+              onClick={() => setActiveTab("studios")}
+              id="tab-studios"
+            >
+              <FiHome className="tab-icon" />
+              Studios
+            </button>
+            <button
+              className={`admin-tab ${activeTab === "vendors" ? "active" : ""}`}
+              onClick={() => setActiveTab("vendors")}
+              id="tab-vendors"
+            >
+              <FiPackage className="tab-icon" />
+              Vendors
+            </button>
+            <button
+              className={`admin-tab ${activeTab === "feedbacks" ? "active" : ""}`}
+              onClick={() => setActiveTab("feedbacks")}
+              id="tab-feedbacks"
+            >
+              <FiStar className="tab-icon" />
+              Feedbacks{" "}
+              {stats?.pendingFeedbacks > 0 && (
+                <span className="tab-badge">{stats.pendingFeedbacks}</span>
+              )}
+            </button>
+            <button
+              className={`admin-tab ${activeTab === "messages" ? "active" : ""}`}
+              onClick={() => setActiveTab("messages")}
+              id="tab-messages"
+            >
+              <FiMail className="tab-icon" />
+              Messages{" "}
+              {adminUnreadCount > 0 && (
+                <span className="tab-badge">{adminUnreadCount}</span>
+              )}
+            </button>
+          </div>
+
+          {/* Studios Tab */}
+          {activeTab === "studios" && (
+            <div className="fade-in">
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--space-sm)",
+                  marginBottom: "var(--space-md)",
+                  flexWrap: "wrap",
+                }}
+              >
+                {["", "PENDING", "APPROVED", "REJECTED"].map((f) => (
+                  <button
+                    key={f}
+                    className={`btn btn-sm ${userFilter === f ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setUserFilter(f)}
+                    id={`filter-${f || "all"}`}
+                  >
+                    {f || "All"}
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                </div>
+              ) : (
+                <div className="admin-table-wrapper">
+                  <table className="admin-table">
+                    <thead>
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{
-                            textAlign: "center",
-                            padding: "40px",
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          No studios found
-                        </td>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Country</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
                       </tr>
-                    ) : (
-                      users.map((user) => (
-                        <tr key={user._id}>
+                    </thead>
+                    <tbody>
+                      {users.length === 0 ? (
+                        <tr>
                           <td
+                            colSpan="7"
                             style={{
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
+                              textAlign: "center",
+                              padding: "40px",
+                              color: "var(--text-muted)",
                             }}
                           >
-                            {user.name}
+                            No studios found
                           </td>
-                          <td>{user.company}</td>
-                          <td>{user.email}</td>
-                          <td>{user.country}</td>
-                          <td>
-                            <span
-                              className={`status-badge ${user.status.toLowerCase()}`}
+                        </tr>
+                      ) : (
+                        users.map((user) => (
+                          <tr key={user._id}>
+                            <td
+                              style={{
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                              }}
                             >
-                              {user.status}
-                            </span>
-                          </td>
-                          <td>
-                            {new Date(user.createdAt).toLocaleDateString()}
-                          </td>
-                          <td>
-                            <div className="admin-actions">
-                              {user.status === "PENDING" && (
-                                <>
+                              {user.name}
+                            </td>
+                            <td>{user.company}</td>
+                            <td>
+                              <div className="admin-email-linkedin-block">
+                                <div>{user.email}</div>
+                                <a
+                                  href={PLACEHOLDER_LINKEDIN_URL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="admin-linkedin-inline"
+                                >
+                                  LinkedIn
+                                </a>
+                              </div>
+                            </td>
+                            <td>{user.country}</td>
+                            <td>
+                              <span
+                                className={`status-badge ${user.status.toLowerCase()}`}
+                              >
+                                {user.status}
+                              </span>
+                            </td>
+                            <td>
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </td>
+                            <td>
+                              <div className="admin-actions">
+                                {user.status === "PENDING" && (
+                                  <>
+                                    <button
+                                      className="btn btn-success btn-sm"
+                                      onClick={() =>
+                                        handleUserAction(user._id, "approve")
+                                      }
+                                      disabled={
+                                        actionLoading === `${user._id}-approve`
+                                      }
+                                      id={`approve-${user._id}`}
+                                    >
+                                      {actionLoading ===
+                                      `${user._id}-approve` ? (
+                                        "..."
+                                      ) : (
+                                        <>
+                                          <FiCheck
+                                            size={14}
+                                            style={{ marginRight: "4px" }}
+                                          />
+                                          Approve
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      className="btn btn-danger btn-sm"
+                                      onClick={() =>
+                                        handleUserAction(user._id, "reject")
+                                      }
+                                      disabled={
+                                        actionLoading === `${user._id}-reject`
+                                      }
+                                      id={`reject-${user._id}`}
+                                    >
+                                      <FiX className="button-icon" />
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                                {user.status === "APPROVED" && (
+                                  <button
+                                    className="btn btn-warning btn-sm"
+                                    onClick={() =>
+                                      handleUserAction(user._id, "block")
+                                    }
+                                    disabled={
+                                      actionLoading === `${user._id}-block`
+                                    }
+                                    id={`block-${user._id}`}
+                                  >
+                                    <FiSlash className="button-icon" />
+                                    Block
+                                  </button>
+                                )}
+                                {user.status === "REJECTED" && (
                                   <button
                                     className="btn btn-success btn-sm"
                                     onClick={() =>
@@ -763,719 +835,677 @@ export default function AdminDashboard() {
                                     }
                                     id={`approve-${user._id}`}
                                   >
-                                    {actionLoading === `${user._id}-approve` ? (
-                                      "..."
-                                    ) : (
-                                      <>
-                                        <FiCheck
-                                          size={14}
-                                          style={{ marginRight: "4px" }}
-                                        />
-                                        Approve
-                                      </>
-                                    )}
+                                    <FiCheck className="button-icon" />
+                                    Re-Approve
                                   </button>
-                                  <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() =>
-                                      handleUserAction(user._id, "reject")
-                                    }
-                                    disabled={
-                                      actionLoading === `${user._id}-reject`
-                                    }
-                                    id={`reject-${user._id}`}
-                                  >
-                                    <FiX className="button-icon" />
-                                    Reject
-                                  </button>
-                                </>
-                              )}
-                              {user.status === "APPROVED" && (
-                                <button
-                                  className="btn btn-warning btn-sm"
-                                  onClick={() =>
-                                    handleUserAction(user._id, "block")
-                                  }
-                                  disabled={
-                                    actionLoading === `${user._id}-block`
-                                  }
-                                  id={`block-${user._id}`}
-                                >
-                                  <FiSlash className="button-icon" />
-                                  Block
-                                </button>
-                              )}
-                              {user.status === "REJECTED" && (
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={() =>
-                                    handleUserAction(user._id, "approve")
-                                  }
-                                  disabled={
-                                    actionLoading === `${user._id}-approve`
-                                  }
-                                  id={`approve-${user._id}`}
-                                >
-                                  <FiCheck className="button-icon" />
-                                  Re-Approve
-                                </button>
-                              )}
-                              {/* Always available edit and delete buttons */}
-                              <button
-                                className="btn btn-info btn-sm"
-                                onClick={() => handleEditStudio(user)}
-                                id={`edit-user-${user._id}`}
-                                title="Edit Studio Profile"
-                              >
-                                <FiEdit className="button-icon" />
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() => handleDeleteUser(user._id)}
-                                disabled={
-                                  actionLoading === `${user._id}-delete`
-                                }
-                                id={`delete-user-${user._id}`}
-                              >
-                                {actionLoading === `${user._id}-delete` ? (
-                                  "..."
-                                ) : (
-                                  <>
-                                    <FiTrash2 className="button-icon" />
-                                    Delete
-                                  </>
                                 )}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Vendors Tab */}
-        {activeTab === "vendors" && (
-          <div className="fade-in">
-            <div style={{ marginBottom: "var(--space-md)" }}>
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate("/admin/vendors/new")}
-                id="add-vendor-btn"
-              >
-                + Add Vendor
-              </button>
+                                {/* Always available edit and delete buttons */}
+                                <button
+                                  className="btn btn-info btn-sm"
+                                  onClick={() => handleEditStudio(user)}
+                                  id={`edit-user-${user._id}`}
+                                  title="Edit Studio Profile"
+                                >
+                                  <FiEdit className="button-icon" />
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeleteUser(user._id)}
+                                  disabled={
+                                    actionLoading === `${user._id}-delete`
+                                  }
+                                  id={`delete-user-${user._id}`}
+                                >
+                                  {actionLoading === `${user._id}-delete` ? (
+                                    "..."
+                                  ) : (
+                                    <>
+                                      <FiTrash2 className="button-icon" />
+                                      Delete
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
+          )}
 
-            {loading ? (
-              <div className="loading">
-                <div className="spinner" />
+          {/* Vendors Tab */}
+          {activeTab === "vendors" && (
+            <div className="fade-in">
+              <div style={{ marginBottom: "var(--space-md)" }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate("/admin/vendors/new")}
+                  id="add-vendor-btn"
+                >
+                  + Add Vendor
+                </button>
               </div>
-            ) : (
-              <div className="admin-table-wrapper">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Country</th>
-                      <th>Size</th>
-                      <th>Badge</th>
-                      <th>Score</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vendors.length === 0 ? (
+
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                </div>
+              ) : (
+                <div className="admin-table-wrapper">
+                  <table className="admin-table">
+                    <thead>
                       <tr>
-                        <td
-                          colSpan="6"
-                          style={{
-                            textAlign: "center",
-                            padding: "40px",
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          No vendors yet
-                        </td>
+                        <th>Name</th>
+                        <th>Country</th>
+                        <th>Size</th>
+                        <th>Badge</th>
+                        <th>Score</th>
+                        <th>Actions</th>
                       </tr>
-                    ) : (
-                      vendors.map((vendor) => (
-                        <tr key={vendor._id}>
+                    </thead>
+                    <tbody>
+                      {vendors.length === 0 ? (
+                        <tr>
                           <td
+                            colSpan="6"
                             style={{
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
+                              textAlign: "center",
+                              padding: "40px",
+                              color: "var(--text-muted)",
                             }}
                           >
-                            {vendor.name}
-                          </td>
-                          <td>{vendor.country}</td>
-                          <td>{vendor.size}</td>
-                          <td>
-                            <span
-                              className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {BADGE_ICONS[vendor.badgeVOE]} {vendor.badgeVOE}
-                            </span>
-                          </td>
-                          <td>{vendor.globalScore?.toFixed(1)}</td>
-                          <td>
-                            <div className="admin-actions">
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() =>
-                                  navigate(`/admin/vendors/${vendor._id}/edit`)
-                                }
-                                id={`edit-${vendor._id}`}
-                              >
-                                ✏ Edit
-                              </button>
-                              <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() => handleDeleteVendor(vendor._id)}
-                                id={`delete-${vendor._id}`}
-                              >
-                                🗑
-                              </button>
-                            </div>
+                            No vendors yet
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Feedbacks Tab */}
-        {activeTab === "feedbacks" && (
-          <div className="fade-in">
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--space-sm)",
-                marginBottom: "var(--space-md)",
-                flexWrap: "wrap",
-              }}
-            >
-              {["PENDING", "APPROVED", "REJECTED", "ALL"].map((f) => (
-                <button
-                  key={f}
-                  className={`btn btn-sm ${feedbackFilter === f ? "btn-primary" : "btn-secondary"}`}
-                  onClick={() => setFeedbackFilter(f)}
-                  id={`filter-fb-${f.toLowerCase()}`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {loading ? (
-              <div className="loading">
-                <div className="spinner" />
-              </div>
-            ) : feedbacks.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon"></div>
-                <h3>No feedbacks found</h3>
-              </div>
-            ) : (
-              <div className="admin-feedback-list">
-                {feedbacks.map((fb) => (
-                  <div
-                    className={`admin-feedback-card ${fb.isFlagged ? "admin-feedback-flagged" : ""} ${highlightedFeedbackId === fb._id ? "admin-item-highlight" : ""}`}
-                    key={fb._id}
-                    id={`admin-feedback-${fb._id}`}
-                  >
-                    <div className="admin-feedback-header">
-                      <div>
-                        <div className="admin-feedback-studio">
-                          {fb.studioName}
-                        </div>
-                        <div className="admin-feedback-vendor">
-                          → {fb.vendorId?.name || "Unknown Vendor"}
-                        </div>
-                        <div className="admin-feedback-date">
-                          {new Date(fb.createdAt).toLocaleDateString()}
-                        </div>
-                        {fb.isFlagged && (
-                          <div className="admin-feedback-flag-info">
-                            🚩 <strong>Flagged:</strong> {fb.flagReason}
-                          </div>
-                        )}
-                      </div>
-                      <div className="admin-feedback-right">
-                        {renderStars(fb.rating)}
-                        <span
-                          className={`status-badge ${fb.status.toLowerCase()}`}
-                        >
-                          {fb.status}
-                        </span>
-                        {fb.isFlagged && (
-                          <span className="status-badge flagged">FLAGGED</span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="admin-feedback-message">{fb.message}</p>
-                    {fb.adminNote && (
-                      <div className="admin-feedback-note">
-                        <strong>Admin note:</strong> {fb.adminNote}
-                      </div>
-                    )}
-                    <div className="admin-feedback-actions">
-                      {fb.status === "PENDING" && (
-                        <>
-                          <button
-                            className="btn btn-success btn-sm"
-                            onClick={() =>
-                              handleFeedbackAction(fb._id, "approve")
-                            }
-                            disabled={actionLoading === `${fb._id}-approve`}
-                          >
-                            {actionLoading === `${fb._id}-approve` ? (
-                              "..."
-                            ) : (
-                              <>
-                                <FiCheck className="button-icon" />
-                                Approve
-                              </>
-                            )}
-                          </button>
-                          <div className="admin-feedback-reject-group">
-                            <input
-                              className="form-input"
-                              placeholder="Admin note (optional)"
-                              value={rejectNote[fb._id] || ""}
-                              onChange={(e) =>
-                                setRejectNote((prev) => ({
-                                  ...prev,
-                                  [fb._id]: e.target.value,
-                                }))
-                              }
-                              style={{ fontSize: "0.8rem" }}
-                            />
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() =>
-                                handleFeedbackAction(fb._id, "reject")
-                              }
-                              disabled={actionLoading === `${fb._id}-reject`}
+                      ) : (
+                        vendors.map((vendor) => (
+                          <tr key={vendor._id}>
+                            <td
+                              style={{
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                              }}
                             >
-                              <FiX className="button-icon" />
-                              Reject
-                            </button>
-                          </div>
-                        </>
+                              {vendor.name}
+                            </td>
+                            <td>{vendor.country}</td>
+                            <td>{vendor.size}</td>
+                            <td>
+                              <span
+                                className={`voe-badge ${badgeClass(vendor.badgeVOE)}`}
+                                style={{ fontSize: "0.7rem" }}
+                              >
+                                {BADGE_ICONS[vendor.badgeVOE]} {vendor.badgeVOE}
+                              </span>
+                            </td>
+                            <td>{vendor.globalScore?.toFixed(1)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/vendors/${vendor._id}/edit`,
+                                    )
+                                  }
+                                  id={`edit-${vendor._id}`}
+                                >
+                                  ✏ Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeleteVendor(vendor._id)}
+                                  id={`delete-${vendor._id}`}
+                                >
+                                  🗑
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
                       )}
-                      {fb.isFlagged && fb.moderationStatus !== "deleted" && (
-                        <button
-                          className="btn btn-warning btn-sm"
-                          onClick={() => handleFeedbackAction(fb._id, "unflag")}
-                          disabled={actionLoading === `${fb._id}-unflag`}
-                        >
-                          🚩 Unflag
-                        </button>
-                      )}
-                      {/* Always available delete button */}
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleFeedbackAction(fb._id, "delete")}
-                        disabled={actionLoading === `${fb._id}-delete`}
-                        id={`delete-feedback-${fb._id}`}
-                      >
-                        {actionLoading === `${fb._id}-delete` ? "..." : "🗑"}
-                      </button>
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Feedbacks Tab */}
+          {activeTab === "feedbacks" && (
+            <div className="fade-in">
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--space-sm)",
+                  marginBottom: "var(--space-md)",
+                  flexWrap: "wrap",
+                }}
+              >
+                {["PENDING", "APPROVED", "REJECTED", "ALL"].map((f) => (
+                  <button
+                    key={f}
+                    className={`btn btn-sm ${feedbackFilter === f ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setFeedbackFilter(f)}
+                    id={`filter-fb-${f.toLowerCase()}`}
+                  >
+                    {f}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Messages Tab */}
-        {activeTab === "messages" && (
-          <div className="fade-in">
-            <div className="admin-messages-toolbar">
-              {["", "NEW", "REPLIED", "CLOSED"].map((f) => (
-                <button
-                  key={f}
-                  className={`btn btn-sm ${messageFilter === f ? "btn-primary" : "btn-secondary"}`}
-                  onClick={() => setMessageFilter(f)}
-                  id={`filter-msg-${f || "all"}`}
-                >
-                  {f || "All"}
-                </button>
-              ))}
-
-              {adminUnreadCount > 0 && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleMarkAllMessagesRead}
-                  id="mark-all-messages-read-btn"
-                >
-                  Mark all as read
-                </button>
-              )}
-
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => setComposeOpen(true)}
-                id="compose-message-btn"
-                style={{ marginLeft: "auto" }}
-              >
-                New Message
-              </button>
-
-              {selectedMessageIds.length > 0 && (
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={handleDeleteSelectedMessages}
-                  disabled={actionLoading === "messages-batch-delete"}
-                  id="delete-selected-messages-btn"
-                >
-                  {actionLoading === "messages-batch-delete"
-                    ? "Deleting..."
-                    : `Delete Selected (${selectedMessageIds.length})`}
-                </button>
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                </div>
+              ) : feedbacks.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon"></div>
+                  <h3>No feedbacks found</h3>
+                </div>
+              ) : (
+                <div className="admin-feedback-list">
+                  {feedbacks.map((fb) => (
+                    <div
+                      className={`admin-feedback-card ${fb.isFlagged ? "admin-feedback-flagged" : ""} ${highlightedFeedbackId === fb._id ? "admin-item-highlight" : ""}`}
+                      key={fb._id}
+                      id={`admin-feedback-${fb._id}`}
+                    >
+                      <div className="admin-feedback-header">
+                        <div>
+                          <div className="admin-feedback-studio">
+                            {fb.studioName}
+                          </div>
+                          <div className="admin-feedback-vendor">
+                            → {fb.vendorId?.name || "Unknown Vendor"}
+                          </div>
+                          <div className="admin-feedback-date">
+                            {new Date(fb.createdAt).toLocaleDateString()}
+                          </div>
+                          {fb.isFlagged && (
+                            <div className="admin-feedback-flag-info">
+                              🚩 <strong>Flagged:</strong> {fb.flagReason}
+                            </div>
+                          )}
+                        </div>
+                        <div className="admin-feedback-right">
+                          {renderStars(fb.rating)}
+                          <span
+                            className={`status-badge ${fb.status.toLowerCase()}`}
+                          >
+                            {fb.status}
+                          </span>
+                          {fb.isFlagged && (
+                            <span className="status-badge flagged">
+                              FLAGGED
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="admin-feedback-message">{fb.message}</p>
+                      {fb.adminNote && (
+                        <div className="admin-feedback-note">
+                          <strong>Admin note:</strong> {fb.adminNote}
+                        </div>
+                      )}
+                      <div className="admin-feedback-actions">
+                        {fb.status === "PENDING" && (
+                          <>
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() =>
+                                handleFeedbackAction(fb._id, "approve")
+                              }
+                              disabled={actionLoading === `${fb._id}-approve`}
+                            >
+                              {actionLoading === `${fb._id}-approve` ? (
+                                "..."
+                              ) : (
+                                <>
+                                  <FiCheck className="button-icon" />
+                                  Approve
+                                </>
+                              )}
+                            </button>
+                            <div className="admin-feedback-reject-group">
+                              <input
+                                className="form-input"
+                                placeholder="Admin note (optional)"
+                                value={rejectNote[fb._id] || ""}
+                                onChange={(e) =>
+                                  setRejectNote((prev) => ({
+                                    ...prev,
+                                    [fb._id]: e.target.value,
+                                  }))
+                                }
+                                style={{ fontSize: "0.8rem" }}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() =>
+                                  handleFeedbackAction(fb._id, "reject")
+                                }
+                                disabled={actionLoading === `${fb._id}-reject`}
+                              >
+                                <FiX className="button-icon" />
+                                Reject
+                              </button>
+                            </div>
+                          </>
+                        )}
+                        {fb.isFlagged && fb.moderationStatus !== "deleted" && (
+                          <button
+                            className="btn btn-warning btn-sm"
+                            onClick={() =>
+                              handleFeedbackAction(fb._id, "unflag")
+                            }
+                            disabled={actionLoading === `${fb._id}-unflag`}
+                          >
+                            🚩 Unflag
+                          </button>
+                        )}
+                        {/* Always available delete button */}
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleFeedbackAction(fb._id, "delete")}
+                          disabled={actionLoading === `${fb._id}-delete`}
+                          id={`delete-feedback-${fb._id}`}
+                        >
+                          {actionLoading === `${fb._id}-delete` ? "..." : "🗑"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
+          )}
 
-            {loading ? (
-              <div className="loading">
-                <div className="spinner" />
+          {/* Messages Tab */}
+          {activeTab === "messages" && (
+            <div className="fade-in">
+              <div className="admin-messages-toolbar">
+                {["", "NEW", "REPLIED", "CLOSED"].map((f) => (
+                  <button
+                    key={f}
+                    className={`btn btn-sm ${messageFilter === f ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setMessageFilter(f)}
+                    id={`filter-msg-${f || "all"}`}
+                  >
+                    {f || "All"}
+                  </button>
+                ))}
+
+                {adminUnreadCount > 0 && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleMarkAllMessagesRead}
+                    id="mark-all-messages-read-btn"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setComposeOpen(true)}
+                  id="compose-message-btn"
+                  style={{ marginLeft: "auto" }}
+                >
+                  New Message
+                </button>
+
+                {selectedMessageIds.length > 0 && (
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={handleDeleteSelectedMessages}
+                    disabled={actionLoading === "messages-batch-delete"}
+                    id="delete-selected-messages-btn"
+                  >
+                    {actionLoading === "messages-batch-delete"
+                      ? "Deleting..."
+                      : `Delete Selected (${selectedMessageIds.length})`}
+                  </button>
+                )}
               </div>
-            ) : messages.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">📩</div>
-                <h3>No messages found</h3>
-              </div>
-            ) : (
-              <div className="admin-messages-layout">
-                <div className="admin-messages-list admin-messages-list-pane">
-                  {messages.map((msg) =>
-                    (() => {
-                      const badge = getAdminMessageBadge(msg);
-                      return (
-                        <button
-                          type="button"
-                          className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${selectedMessageIds.includes(msg._id) ? "message-card-selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
-                          key={msg._id}
-                          onClick={() => setSelectedMessage(msg)}
-                          id={`admin-message-${msg._id}`}
-                        >
-                          <div
-                            className="message-select-box"
-                            onClick={(e) => e.stopPropagation()}
+
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📩</div>
+                  <h3>No messages found</h3>
+                </div>
+              ) : (
+                <div className="admin-messages-layout">
+                  <div className="admin-messages-list admin-messages-list-pane">
+                    {messages.map((msg) =>
+                      (() => {
+                        const badge = getAdminMessageBadge(msg);
+                        return (
+                          <button
+                            type="button"
+                            className={`admin-message-card admin-message-selectable ${selectedMessage?._id === msg._id ? "selected" : ""} ${selectedMessageIds.includes(msg._id) ? "message-card-selected" : ""} ${highlightedMessageId === msg._id ? "admin-item-highlight" : ""}`}
+                            key={msg._id}
+                            onClick={() => setSelectedMessage(msg)}
+                            id={`admin-message-${msg._id}`}
                           >
-                            <input
-                              type="checkbox"
-                              id={`checkbox-${msg._id}`}
-                              checked={selectedMessageIds.includes(msg._id)}
-                              onChange={() =>
-                                handleToggleMessageSelection(msg._id)
-                              }
-                              aria-label={`Select message ${msg.subject}`}
-                              className="message-checkbox"
-                            />
-                            <label
-                              htmlFor={`checkbox-${msg._id}`}
-                              className="message-checkbox-label"
-                              aria-hidden="true"
-                            />
-                          </div>
+                            <div
+                              className="message-select-box"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                id={`checkbox-${msg._id}`}
+                                checked={selectedMessageIds.includes(msg._id)}
+                                onChange={() =>
+                                  handleToggleMessageSelection(msg._id)
+                                }
+                                aria-label={`Select message ${msg.subject}`}
+                                className="message-checkbox"
+                              />
+                              <label
+                                htmlFor={`checkbox-${msg._id}`}
+                                className="message-checkbox-label"
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <div className="admin-message-header">
+                              <div>
+                                <div className="admin-message-studio">
+                                  {msg.direction === "OUTBOUND"
+                                    ? `To: ${msg.recipientName || msg.studioName}`
+                                    : msg.studioName}
+                                </div>
+                                <div className="admin-message-email">
+                                  {msg.direction === "OUTBOUND"
+                                    ? msg.recipientEmail || msg.studioEmail
+                                    : msg.studioEmail}
+                                </div>
+                                <div className="admin-message-date">
+                                  {new Date(msg.createdAt).toLocaleString()}
+                                </div>
+                              </div>
+                              <span
+                                className={`status-badge ${badge.className}`}
+                              >
+                                {badge.label}
+                              </span>
+                            </div>
+                            <div className="admin-message-subject">
+                              {msg.subject}
+                            </div>
+                            <p className="admin-message-body admin-message-body-truncate">
+                              {msg.message}
+                            </p>
+                          </button>
+                        );
+                      })(),
+                    )}
+                  </div>
+
+                  {selectedMessage &&
+                    (() => {
+                      const selectedBadge =
+                        getAdminMessageBadge(selectedMessage);
+                      return (
+                        <div className="admin-message-card admin-message-detail-pane">
                           <div className="admin-message-header">
                             <div>
                               <div className="admin-message-studio">
-                                {msg.direction === "OUTBOUND"
-                                  ? `To: ${msg.recipientName || msg.studioName}`
-                                  : msg.studioName}
+                                {selectedMessage.direction === "OUTBOUND"
+                                  ? `Recipient: ${selectedMessage.recipientName || selectedMessage.studioName}`
+                                  : `Sender: ${selectedMessage.studioName}`}
                               </div>
                               <div className="admin-message-email">
-                                {msg.direction === "OUTBOUND"
-                                  ? msg.recipientEmail || msg.studioEmail
-                                  : msg.studioEmail}
+                                {selectedMessage.direction === "OUTBOUND"
+                                  ? selectedMessage.recipientEmail ||
+                                    selectedMessage.studioEmail
+                                  : selectedMessage.studioEmail}
                               </div>
                               <div className="admin-message-date">
-                                {new Date(msg.createdAt).toLocaleString()}
+                                Created{" "}
+                                {new Date(
+                                  selectedMessage.createdAt,
+                                ).toLocaleString()}
                               </div>
                             </div>
-                            <span className={`status-badge ${badge.className}`}>
-                              {badge.label}
+                            <span
+                              className={`status-badge ${selectedBadge.className}`}
+                            >
+                              {selectedBadge.label}
                             </span>
                           </div>
+
                           <div className="admin-message-subject">
-                            {msg.subject}
+                            <FiFileText
+                              size={16}
+                              style={{ marginRight: "8px" }}
+                            />
+                            {selectedMessage.subject}
                           </div>
-                          <p className="admin-message-body admin-message-body-truncate">
-                            {msg.message}
+
+                          <p className="admin-message-body">
+                            {selectedMessage.message}
                           </p>
-                        </button>
-                      );
-                    })(),
-                  )}
-                </div>
 
-                {selectedMessage &&
-                  (() => {
-                    const selectedBadge = getAdminMessageBadge(selectedMessage);
-                    return (
-                      <div className="admin-message-card admin-message-detail-pane">
-                        <div className="admin-message-header">
-                          <div>
-                            <div className="admin-message-studio">
-                              {selectedMessage.direction === "OUTBOUND"
-                                ? `Recipient: ${selectedMessage.recipientName || selectedMessage.studioName}`
-                                : `Sender: ${selectedMessage.studioName}`}
-                            </div>
-                            <div className="admin-message-email">
-                              {selectedMessage.direction === "OUTBOUND"
-                                ? selectedMessage.recipientEmail ||
-                                  selectedMessage.studioEmail
-                                : selectedMessage.studioEmail}
-                            </div>
-                            <div className="admin-message-date">
-                              Created{" "}
-                              {new Date(
-                                selectedMessage.createdAt,
-                              ).toLocaleString()}
-                            </div>
-                          </div>
-                          <span
-                            className={`status-badge ${selectedBadge.className}`}
-                          >
-                            {selectedBadge.label}
-                          </span>
-                        </div>
-
-                        <div className="admin-message-subject">
-                          <FiFileText
-                            size={16}
-                            style={{ marginRight: "8px" }}
-                          />
-                          {selectedMessage.subject}
-                        </div>
-
-                        <p className="admin-message-body">
-                          {selectedMessage.message}
-                        </p>
-
-                        {selectedMessage.adminReply && (
-                          <div className="admin-message-reply">
-                            <strong>Your reply:</strong>
-                            <p>{selectedMessage.adminReply}</p>
-                            <small>
-                              Replied{" "}
-                              {new Date(
-                                selectedMessage.repliedAt,
-                              ).toLocaleString()}
-                            </small>
-                          </div>
-                        )}
-
-                        {selectedMessage.direction !== "OUTBOUND" &&
-                          selectedMessage.status === "NEW" && (
-                            <div className="admin-message-reply-form">
-                              <textarea
-                                className="form-input form-textarea"
-                                placeholder="Type your reply..."
-                                rows="4"
-                                value={replyText[selectedMessage._id] || ""}
-                                onChange={(e) =>
-                                  setReplyText((prev) => ({
-                                    ...prev,
-                                    [selectedMessage._id]: e.target.value,
-                                  }))
-                                }
-                              />
-                              <div className="admin-message-actions">
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  onClick={() =>
-                                    handleReply(selectedMessage._id)
-                                  }
-                                  disabled={
-                                    actionLoading ===
-                                    `${selectedMessage._id}-reply`
-                                  }
-                                >
-                                  {actionLoading ===
-                                  `${selectedMessage._id}-reply`
-                                    ? "Sending..."
-                                    : "Send Reply"}
-                                </button>
-                              </div>
+                          {selectedMessage.adminReply && (
+                            <div className="admin-message-reply">
+                              <strong>Your reply:</strong>
+                              <p>{selectedMessage.adminReply}</p>
+                              <small>
+                                Replied{" "}
+                                {new Date(
+                                  selectedMessage.repliedAt,
+                                ).toLocaleString()}
+                              </small>
                             </div>
                           )}
 
-                        <div
-                          className="admin-message-actions"
-                          style={{ marginTop: "var(--space-sm)" }}
-                        >
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() =>
-                              handleDeleteMessage(selectedMessage._id)
-                            }
-                            disabled={
-                              actionLoading === `${selectedMessage._id}-delete`
-                            }
-                            id={`delete-message-${selectedMessage._id}`}
+                          {selectedMessage.direction !== "OUTBOUND" &&
+                            selectedMessage.status === "NEW" && (
+                              <div className="admin-message-reply-form">
+                                <textarea
+                                  className="form-input form-textarea"
+                                  placeholder="Type your reply..."
+                                  rows="4"
+                                  value={replyText[selectedMessage._id] || ""}
+                                  onChange={(e) =>
+                                    setReplyText((prev) => ({
+                                      ...prev,
+                                      [selectedMessage._id]: e.target.value,
+                                    }))
+                                  }
+                                />
+                                <div className="admin-message-actions">
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() =>
+                                      handleReply(selectedMessage._id)
+                                    }
+                                    disabled={
+                                      actionLoading ===
+                                      `${selectedMessage._id}-reply`
+                                    }
+                                  >
+                                    {actionLoading ===
+                                    `${selectedMessage._id}-reply`
+                                      ? "Sending..."
+                                      : "Send Reply"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                          <div
+                            className="admin-message-actions"
+                            style={{ marginTop: "var(--space-sm)" }}
                           >
-                            {actionLoading === `${selectedMessage._id}-delete`
-                              ? "..."
-                              : "Delete"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-              </div>
-            )}
-
-            {composeOpen && (
-              <div
-                className="modal-overlay"
-                onClick={() => setComposeOpen(false)}
-              >
-                <div
-                  className="modal-content compose-message-modal"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="modal-close"
-                    onClick={() => setComposeOpen(false)}
-                  >
-                    ✕
-                  </button>
-                  <div className="modal-header">
-                    <h2>New Message</h2>
-                    <p>Send a message directly to one or multiple studios.</p>
-                  </div>
-
-                  <div className="modal-body">
-                    <div className="form-group">
-                      <label className="form-label">Search recipients</label>
-                      <input
-                        className="form-input"
-                        placeholder="Search by name, email, or company"
-                        value={recipientSearch}
-                        onChange={(e) => setRecipientSearch(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="compose-recipient-list">
-                      <label className="compose-recipient-select-all">
-                        <input
-                          ref={selectAllRecipientsRef}
-                          type="checkbox"
-                          checked={allVisibleSelected}
-                          onChange={handleToggleSelectAllRecipients}
-                        />
-                        <span>
-                          Select All Recipients{" "}
-                          <span className="compose-recipient-count">
-                            ({visibleRecipientIds.length} visible)
-                          </span>
-                        </span>
-                      </label>
-
-                      {recipients.length === 0 ? (
-                        <div className="messages-empty">
-                          No recipients found.
-                        </div>
-                      ) : (
-                        recipients.map((recipient) => (
-                          <label
-                            key={recipient._id}
-                            className="compose-recipient-item"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedRecipientIds.includes(
-                                recipient._id,
-                              )}
-                              onChange={() =>
-                                handleComposeRecipientToggle(recipient._id)
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() =>
+                                handleDeleteMessage(selectedMessage._id)
                               }
-                            />
-                            <div>
-                              <div className="admin-message-studio">
-                                {recipient.name}
+                              disabled={
+                                actionLoading ===
+                                `${selectedMessage._id}-delete`
+                              }
+                              id={`delete-message-${selectedMessage._id}`}
+                            >
+                              {actionLoading === `${selectedMessage._id}-delete`
+                                ? "..."
+                                : "Delete"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                </div>
+              )}
+
+              {composeOpen && (
+                <div
+                  className="modal-overlay"
+                  onClick={() => setComposeOpen(false)}
+                >
+                  <div
+                    className="modal-content compose-message-modal"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="modal-close"
+                      onClick={() => setComposeOpen(false)}
+                    >
+                      ✕
+                    </button>
+                    <div className="modal-header">
+                      <h2>New Message</h2>
+                      <p>Send a message directly to one or multiple studios.</p>
+                    </div>
+
+                    <div className="modal-body">
+                      <div className="form-group">
+                        <label className="form-label">Search recipients</label>
+                        <input
+                          className="form-input"
+                          placeholder="Search by name, email, or company"
+                          value={recipientSearch}
+                          onChange={(e) => setRecipientSearch(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="compose-recipient-list">
+                        <label className="compose-recipient-select-all">
+                          <input
+                            ref={selectAllRecipientsRef}
+                            type="checkbox"
+                            checked={allVisibleSelected}
+                            onChange={handleToggleSelectAllRecipients}
+                          />
+                          <span>
+                            Select All Recipients{" "}
+                            <span className="compose-recipient-count">
+                              ({visibleRecipientIds.length} visible)
+                            </span>
+                          </span>
+                        </label>
+
+                        {recipients.length === 0 ? (
+                          <div className="messages-empty">
+                            No recipients found.
+                          </div>
+                        ) : (
+                          recipients.map((recipient) => (
+                            <label
+                              key={recipient._id}
+                              className="compose-recipient-item"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedRecipientIds.includes(
+                                  recipient._id,
+                                )}
+                                onChange={() =>
+                                  handleComposeRecipientToggle(recipient._id)
+                                }
+                              />
+                              <div>
+                                <div className="admin-message-studio">
+                                  {recipient.name}
+                                </div>
+                                <div className="admin-message-email">
+                                  {recipient.email} • {recipient.company}
+                                </div>
                               </div>
-                              <div className="admin-message-email">
-                                {recipient.email} • {recipient.company}
-                              </div>
-                            </div>
-                          </label>
-                        ))
-                      )}
-                    </div>
+                            </label>
+                          ))
+                        )}
+                      </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Subject</label>
-                      <input
-                        className="form-input"
-                        value={composeForm.subject}
-                        onChange={(e) =>
-                          setComposeForm((prev) => ({
-                            ...prev,
-                            subject: e.target.value,
-                          }))
-                        }
-                        maxLength={200}
-                        placeholder="Message subject"
-                      />
-                    </div>
+                      <div className="form-group">
+                        <label className="form-label">Subject</label>
+                        <input
+                          className="form-input"
+                          value={composeForm.subject}
+                          onChange={(e) =>
+                            setComposeForm((prev) => ({
+                              ...prev,
+                              subject: e.target.value,
+                            }))
+                          }
+                          maxLength={200}
+                          placeholder="Message subject"
+                        />
+                      </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Message</label>
-                      <textarea
-                        className="form-input form-textarea"
-                        rows="5"
-                        value={composeForm.message}
-                        onChange={(e) =>
-                          setComposeForm((prev) => ({
-                            ...prev,
-                            message: e.target.value,
-                          }))
-                        }
-                        maxLength={5000}
-                        placeholder="Type your message"
-                      />
-                    </div>
+                      <div className="form-group">
+                        <label className="form-label">Message</label>
+                        <textarea
+                          className="form-input form-textarea"
+                          rows="5"
+                          value={composeForm.message}
+                          onChange={(e) =>
+                            setComposeForm((prev) => ({
+                              ...prev,
+                              message: e.target.value,
+                            }))
+                          }
+                          maxLength={5000}
+                          placeholder="Type your message"
+                        />
+                      </div>
 
-                    <div className="modal-actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setComposeOpen(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="btn btn-primary"
-                        onClick={handleSendNewMessage}
-                        disabled={actionLoading === "compose-send"}
-                      >
-                        {actionLoading === "compose-send"
-                          ? "Sending..."
-                          : "Send Message"}
-                      </button>
+                      <div className="modal-actions">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setComposeOpen(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleSendNewMessage}
+                          disabled={actionLoading === "compose-send"}
+                        >
+                          {actionLoading === "compose-send"
+                            ? "Sending..."
+                            : "Send Message"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Footer */}

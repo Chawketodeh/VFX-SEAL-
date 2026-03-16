@@ -73,10 +73,10 @@ export default function AssessorsSection() {
       <div className="container">
         <div className="section-header">
           <span className="section-tag">Network</span>
-          <h2 className="section-title">Our Assessor Network</h2>
+          <h2 className="section-title">Our Studio Network</h2>
           <p className="section-subtitle">
-            The Seal works with experienced industry assessors and trusted
-            evaluation partners
+            Our members are production-side VFX studios who use The Seal to
+            search, review and shortlist certified vendors with confidence.
           </p>
         </div>
 
