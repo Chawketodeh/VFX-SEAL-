@@ -167,6 +167,9 @@ export default function VendorCarousel({ title, vendors, category }) {
 
                   {/* Studio Info */}
                   <div className="carousel-vendor-info">
+                    <span className="carousel-preview-chip">
+                      Sample / Non-contractual preview
+                    </span>
                     <h4 className="carousel-vendor-name">{sampleName}</h4>
                     <div className="carousel-vendor-meta">
                       <span className="carousel-location">

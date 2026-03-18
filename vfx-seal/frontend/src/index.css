@@ -4323,6 +4323,21 @@ input[type="checkbox"]:checked + .checkmark::after {
   gap: var(--space-sm);
 }
 
+.carousel-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(255, 215, 0, 0.09);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .carousel-vendor-name {
   font-size: 1.1rem;
   font-weight: 700;

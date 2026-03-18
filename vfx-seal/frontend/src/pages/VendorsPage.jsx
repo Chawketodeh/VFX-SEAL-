@@ -70,9 +70,14 @@ export default function VendorsPage() {
   };
 
   const validationTierOptions = [
-    { key: "audited", label: "VOE-audited", badges: ["Gold", "Silver"] },
     { key: "self", label: "Self-assessed", badges: ["Candidate"] },
-    { key: "non", label: "Non-audited", badges: ["None"] },
+    { key: "non", label: "The rest", badges: ["None"] },
+  ];
+
+  const badgeFilterOptions = [
+    { key: "gold", label: "Gold", badge: "Gold" },
+    { key: "silver", label: "Silver", badge: "Silver" },
+    { key: "candidate", label: "Candidate", badge: "Candidate" },
   ];
 
   const isTierActive = (tierOption) =>
@@ -308,7 +313,6 @@ export default function VendorsPage() {
                   <div className="filter-title">
                     Filters
                     {(activeFilters.country.length > 0 ||
-                      activeFilters.size.length > 0 ||
                       activeFilters.badge.length > 0) && (
                       <button
                         className="btn btn-sm btn-secondary"
@@ -351,24 +355,6 @@ export default function VendorsPage() {
                     </div>
                   )}
 
-                  {filters.sizes && filters.sizes.length > 0 && (
-                    <div className="filter-group">
-                      <div className="filter-group-title">Size</div>
-                      {["Micro", "Small", "Medium", "Large"]
-                        .filter((s) => filters.sizes.includes(s))
-                        .map((s) => (
-                          <div
-                            key={s}
-                            className={`filter-option ${activeFilters.size.includes(s) ? "active" : ""}`}
-                            onClick={() => toggleFilter("size", s)}
-                          >
-                            <span className="filter-checkbox" />
-                            {s}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-
                   <div className="filter-group">
                     <div className="filter-group-title">Validation Profile</div>
                     {validationTierOptions.map((tier) => (
@@ -379,6 +365,23 @@ export default function VendorsPage() {
                       >
                         <span className="filter-checkbox" />
                         {tier.label}
+                      </div>
+                    ))}
+
+                    <div
+                      className="filter-group-title"
+                      style={{ marginTop: "var(--space-md)" }}
+                    >
+                      Badge
+                    </div>
+                    {badgeFilterOptions.map((badgeOption) => (
+                      <div
+                        key={badgeOption.key}
+                        className={`filter-option ${activeFilters.badge.includes(badgeOption.badge) ? "active" : ""}`}
+                        onClick={() => toggleFilter("badge", badgeOption.badge)}
+                      >
+                        <span className="filter-checkbox" />
+                        {badgeOption.label}
                       </div>
                     ))}
                   </div>
