@@ -153,7 +153,7 @@ export default function VendorCarousel({ title, vendors, category }) {
 
             return (
               <Link
-                to={`/vendors/${vendor.slug}`}
+                to="/vendors"
                 key={vendor._id}
                 className="carousel-vendor-card"
               >
