@@ -3347,9 +3347,9 @@ input[type="checkbox"]:checked + .checkmark::after {
 
 .particle {
   position: absolute;
-  width: 3px;
-  height: 3px;
-  background: var(--accent);
+  width: 2px;
+  height: 2px;
+  background: rgba(201, 163, 79, 0.45);
   border-radius: 50%;
   opacity: 0;
   animation: particle-float linear infinite;
@@ -3357,8 +3357,8 @@ input[type="checkbox"]:checked + .checkmark::after {
 
 @keyframes particle-float {
   0% { opacity: 0; transform: translateY(0) scale(0); }
-  10% { opacity: 0.6; }
-  50% { opacity: 0.3; }
+  10% { opacity: 0.28; }
+  50% { opacity: 0.12; }
   100% { opacity: 0; transform: translateY(-200px) scale(1); }
 }
 

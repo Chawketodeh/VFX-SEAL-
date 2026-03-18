@@ -18,9 +18,9 @@ export default function VantaNetBackground() {
         minWidth: 200,
         scale: 1,
         scaleMobile: 1,
-        color: 0xd4af37,
-        points: 13,
-        spacing: 21,
+        color: 0xe6d6aa,
+        points: 9,
+        spacing: 26,
         backgroundColor: 0x050507,
       });
     }
@@ -45,7 +45,7 @@ export default function VantaNetBackground() {
         bottom: 0,
         zIndex: -1,
         pointerEvents: "none",
-        opacity: 0.35,
+        opacity: 0.1,
       }}
     />
   );
