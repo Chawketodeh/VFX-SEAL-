@@ -405,12 +405,7 @@ export default function VendorsPage() {
                   {highlightedVendors.length > 0 && (
                     <section className="marketplace-featured-band fade-in">
                       <div className="marketplace-featured-header">
-                        <h2>Highlighted Vendors</h2>
-                        <p>
-                          VOE-audited vendors are prioritized here as
-                          marketplace references. Sponsored spots are also
-                          supported.
-                        </p>
+                        <h2>VOE audited</h2>
                       </div>
 
                       <div className="marketplace-featured-row">
