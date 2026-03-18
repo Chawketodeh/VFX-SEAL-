@@ -14,6 +14,7 @@ import {
   FiUsers,
   FiExternalLink,
   FiAlertTriangle,
+  FiStar,
 } from "react-icons/fi";
 import { FaTrophy } from "react-icons/fa";
 
@@ -173,6 +174,27 @@ export default function VendorDetailPage() {
 
   const badgeClass = (badge) => (badge || "none").toLowerCase();
 
+  const renderScoreStars = (score) => {
+    const stars = Math.max(
+      0,
+      Math.min(5, Math.round((Number(score) || 0) / 2)),
+    );
+    return (
+      <div
+        className="stars stars-sm"
+        aria-label={`Score stars: ${stars} out of 5`}
+      >
+        {[1, 2, 3, 4, 5].map((star) => (
+          <FiStar
+            key={star}
+            className={`star ${star <= stars ? "filled" : ""}`}
+            size={16}
+          />
+        ))}
+      </div>
+    );
+  };
+
   useEffect(() => {
     const stateSnapshot = location.state?.vendorSnapshot || null;
     const cachedSnapshot = stateSnapshot || getVendorSnapshotBySlug(slug);
@@ -297,6 +319,11 @@ export default function VendorDetailPage() {
   const scorePercent = vendor
     ? (Number(vendor.globalScore || 0) / 10) * 100
     : 0;
+  const feedbackTargetId = vendor
+    ? String(vendor._id || "").startsWith("odoo_")
+      ? vendor.slug
+      : vendor._id
+    : "";
   const canAccessPdf =
     Boolean(vendor?.pdfReport?.filePath) &&
     (vendor?.pdfReport?.visibility !== "private" || user?.role === "ADMIN");
@@ -415,20 +442,16 @@ export default function VendorDetailPage() {
                     <span className="score-ring-label">VOE Score</span>
                   </div>
                 </div>
+                {renderScoreStars(vendor.globalScore)}
               </div>
             </div>
 
             {/* Feedback & Rating Section — Collapsible Accordion */}
-            {String(vendor._id || "").startsWith("odoo_") ? (
-              <div
-                className="messages-empty"
-                style={{ marginBottom: "var(--space-lg)" }}
-              >
-                Ratings & reviews are not available yet for this profile source.
-              </div>
-            ) : (
-              <FeedbackSection vendorId={vendor._id} vendorName={vendor.name} />
-            )}
+            <FeedbackSection
+              vendorId={feedbackTargetId}
+              vendorName={vendor.name}
+              vendorSlug={vendor.slug}
+            />
 
             {/* Assessment Sections */}
             {vendor.assessment?.length > 0 && (

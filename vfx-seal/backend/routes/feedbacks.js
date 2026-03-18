@@ -1,26 +1,60 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 const Feedback = require("../models/Feedback");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
-const { protect, requireApproved } = require("../middleware/auth");
+const Vendor = require("../models/Vendor");
+const { protect } = require("../middleware/auth");
 const {
   moderateContent,
   filterFeedbacksForDisplay,
 } = require("../services/moderationService");
 const router = express.Router();
 
-// POST /api/feedbacks — submit feedback (approved studio only)
-router.post("/", protect, requireApproved, async (req, res) => {
-  try {
-    // Only studios can leave feedback
-    if (req.user.role !== "STUDIO") {
-      return res
-        .status(403)
-        .json({ message: "Only studios can leave feedback" });
-    }
+const normalizeVendorRef = (value) =>
+  slugify(String(value || ""), { lower: true, strict: true });
 
-    const { vendorId, rating, message } = req.body;
+const resolveVendorForFeedback = async ({
+  vendorId,
+  vendorSlug,
+  vendorName,
+  createIfMissing = false,
+}) => {
+  const normalizedSlug = normalizeVendorRef(
+    vendorSlug || vendorId || vendorName,
+  );
+
+  if (mongoose.Types.ObjectId.isValid(vendorId)) {
+    const byId = await Vendor.findById(vendorId);
+    if (byId) return byId;
+  }
+
+  if (normalizedSlug) {
+    const bySlug = await Vendor.findOne({ slug: normalizedSlug });
+    if (bySlug) return bySlug;
+  }
+
+  if (!createIfMissing) return null;
+
+  const fallbackName = String(
+    vendorName || vendorSlug || vendorId || "Vendor",
+  ).trim();
+  return Vendor.create({
+    name: fallbackName,
+    slug: normalizedSlug || normalizeVendorRef(fallbackName),
+    country: "Unknown",
+    size: "Micro",
+    badgeVOE: "None",
+    globalScore: 0,
+    services: [],
+  });
+};
+
+// POST /api/feedbacks — submit feedback (any authenticated user)
+router.post("/", protect, async (req, res) => {
+  try {
+    const { vendorId, vendorSlug, vendorName, rating, message } = req.body;
 
     if (!vendorId || !rating || !message) {
       return res
@@ -40,9 +74,20 @@ router.post("/", protect, requireApproved, async (req, res) => {
         .json({ message: "Message must be under 2000 characters" });
     }
 
+    const resolvedVendor = await resolveVendorForFeedback({
+      vendorId,
+      vendorSlug,
+      vendorName,
+      createIfMissing: true,
+    });
+
+    if (!resolvedVendor?._id) {
+      return res.status(400).json({ message: "Invalid vendor reference" });
+    }
+
     // Check for existing feedback (one per studio per vendor)
     const existing = await Feedback.findOne({
-      vendorId,
+      vendorId: resolvedVendor._id,
       studioId: req.user._id,
     });
     if (existing) {
@@ -54,10 +99,14 @@ router.post("/", protect, requireApproved, async (req, res) => {
     // Moderate the content
     const moderationResult = moderateContent(message);
 
+    const displayName = [req.user?.name, req.user?.company]
+      .filter(Boolean)
+      .join(" — ");
+
     const feedback = await Feedback.create({
-      vendorId,
+      vendorId: resolvedVendor._id,
       studioId: req.user._id,
-      studioName: `${req.user.name} (${req.user.company})`,
+      studioName: displayName || req.user?.email || "User",
       rating,
       message,
       status: moderationResult.isFlagged ? "PENDING" : "PENDING", // All feedback starts as PENDING
@@ -118,14 +167,26 @@ router.post("/", protect, requireApproved, async (req, res) => {
 });
 
 // GET /api/feedbacks/vendor/:vendorId — get approved + rejected feedbacks for a vendor
-router.get("/vendor/:vendorId", protect, requireApproved, async (req, res) => {
+router.get("/vendor/:vendorId", protect, async (req, res) => {
   try {
-    const isAdmin = req.user.role === "ADMIN";
+    const resolvedVendor = await resolveVendorForFeedback({
+      vendorId: req.params.vendorId,
+      createIfMissing: false,
+    });
+
+    if (!resolvedVendor?._id) {
+      return res.json({
+        feedbacks: [],
+        avgRating: 0,
+        totalRatings: 0,
+        myFeedback: null,
+      });
+    }
 
     // Fetch APPROVED and REJECTED feedbacks (PENDING hidden from public)
     // Non-deleted feedbacks only unless admin is viewing in admin context
     const feedbacks = await Feedback.find({
-      vendorId: req.params.vendorId,
+      vendorId: resolvedVendor._id,
       status: { $in: ["APPROVED", "REJECTED"] },
       moderationStatus: { $ne: "deleted" },
     }).sort({ createdAt: -1 });
@@ -145,7 +206,7 @@ router.get("/vendor/:vendorId", protect, requireApproved, async (req, res) => {
 
     // Check if current user already submitted
     const myFeedback = await Feedback.findOne({
-      vendorId: req.params.vendorId,
+      vendorId: resolvedVendor._id,
       studioId: req.user._id,
     });
 
@@ -162,36 +223,40 @@ router.get("/vendor/:vendorId", protect, requireApproved, async (req, res) => {
 });
 
 // GET /api/feedbacks/vendor/:vendorId/summary — lightweight summary for vendor cards
-router.get(
-  "/vendor/:vendorId/summary",
-  protect,
-  requireApproved,
-  async (req, res) => {
-    try {
-      const feedbacks = await Feedback.find({
-        vendorId: req.params.vendorId,
-        status: "APPROVED",
-      }).select("rating");
+router.get("/vendor/:vendorId/summary", protect, async (req, res) => {
+  try {
+    const resolvedVendor = await resolveVendorForFeedback({
+      vendorId: req.params.vendorId,
+      createIfMissing: false,
+    });
 
-      const totalRatings = feedbacks.length;
-      const avgRating =
-        totalRatings > 0
-          ? feedbacks.reduce((sum, f) => sum + f.rating, 0) / totalRatings
-          : 0;
-
-      res.json({
-        avgRating: Math.round(avgRating * 10) / 10,
-        totalRatings,
-      });
-    } catch (error) {
-      console.error("Get feedback summary error:", error);
-      res.status(500).json({ message: "Server error" });
+    if (!resolvedVendor?._id) {
+      return res.json({ avgRating: 0, totalRatings: 0 });
     }
-  },
-);
+
+    const feedbacks = await Feedback.find({
+      vendorId: resolvedVendor._id,
+      status: "APPROVED",
+    }).select("rating");
+
+    const totalRatings = feedbacks.length;
+    const avgRating =
+      totalRatings > 0
+        ? feedbacks.reduce((sum, f) => sum + f.rating, 0) / totalRatings
+        : 0;
+
+    res.json({
+      avgRating: Math.round(avgRating * 10) / 10,
+      totalRatings,
+    });
+  } catch (error) {
+    console.error("Get feedback summary error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // GET /api/feedbacks/summaries — bulk summaries for all vendors (for vendor listing)
-router.get("/summaries", protect, requireApproved, async (req, res) => {
+router.get("/summaries", protect, async (req, res) => {
   try {
     const { vendorIds } = req.query; // Optional: only get summaries for specific vendors
 

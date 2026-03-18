@@ -3,8 +3,8 @@ import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { FiStar, FiEdit } from "react-icons/fi";
 
-export default function FeedbackSection({ vendorId, vendorName }) {
-  const { user, isAdmin } = useAuth();
+export default function FeedbackSection({ vendorId, vendorName, vendorSlug }) {
+  const { user } = useAuth();
   const [feedbacks, setFeedbacks] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
@@ -50,10 +50,14 @@ export default function FeedbackSection({ vendorId, vendorName }) {
     setSubmitting(true);
     setError("");
     try {
-      await api.post("/feedbacks", { vendorId, rating, message });
-      setSuccess(
-        "Feedback submitted! It will be visible after admin approval.",
-      );
+      await api.post("/feedbacks", {
+        vendorId,
+        vendorSlug,
+        vendorName,
+        rating,
+        message,
+      });
+      setSuccess("Review submitted successfully!");
       setRating(0);
       setMessage("");
       fetchFeedbacks();
@@ -267,8 +271,8 @@ export default function FeedbackSection({ vendorId, vendorName }) {
               </div>
             )}
 
-            {/* Leave Review Form (only for studios who haven't submitted yet) */}
-            {!isAdmin && !myFeedback && (
+            {/* Leave Review Form (any logged-in user, once per vendor) */}
+            {user && !myFeedback && (
               <div className="feedback-form-card">
                 <h3>Leave a Review</h3>
                 <p className="feedback-form-subtitle">
@@ -312,6 +316,15 @@ export default function FeedbackSection({ vendorId, vendorName }) {
                     )}
                   </button>
                 </form>
+              </div>
+            )}
+
+            {!user && (
+              <div
+                className="messages-empty"
+                style={{ marginTop: "var(--space-md)" }}
+              >
+                Log in to leave a review and comment.
               </div>
             )}
           </div>

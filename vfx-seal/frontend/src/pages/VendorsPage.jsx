@@ -329,6 +329,9 @@ export default function VendorsPage() {
                     style={{ marginBottom: "var(--space-lg)" }}
                   >
                     <div className="search-bar">
+                      <span className="search-icon" aria-hidden="true">
+                        <FiSearch size={16} />
+                      </span>
                       <input
                         className="form-input"
                         placeholder="Search vendors..."
