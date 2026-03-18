@@ -3335,7 +3335,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   justify-content: center;
   padding: 120px var(--space-lg) 80px;
   overflow: hidden;
-  background: #ffffff;
+  
   
 }
 

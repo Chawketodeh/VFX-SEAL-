@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/client";
 import {
@@ -27,6 +27,7 @@ const BADGE_ICONS = {
 };
 
 const PLACEHOLDER_LINKEDIN_URL = "https://www.linkedin.com/in/YOUR-LINKEDIN";
+const ADMIN_LIST_PAGE_SIZE = 10;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -58,6 +59,14 @@ export default function AdminDashboard() {
   const [selectedStudio, setSelectedStudio] = useState(null);
   const [deleteMessageTarget, setDeleteMessageTarget] = useState(null);
   const [selectedMessageIds, setSelectedMessageIds] = useState([]);
+  const [studioSearch, setStudioSearch] = useState("");
+  const [vendorSearch, setVendorSearch] = useState("");
+  const [feedbackSearch, setFeedbackSearch] = useState("");
+  const [messageSearch, setMessageSearch] = useState("");
+  const [studioPage, setStudioPage] = useState(1);
+  const [vendorPage, setVendorPage] = useState(1);
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const [messagePage, setMessagePage] = useState(1);
 
   const getMessagesEndpoint = () => {
     const params = messageFilter ? `?status=${messageFilter}` : "";
@@ -152,8 +161,10 @@ export default function AdminDashboard() {
         const { data } = await api.get(`/admin/users${params}`);
         setUsers(data.users);
       } else if (activeTab === "vendors") {
-        const { data } = await api.get("/vendors");
-        setVendors(data.vendors);
+        const { data } = await api.get("/odoo/vendors", {
+          params: { page: 1, limit: 100 },
+        });
+        setVendors(data.vendors || []);
       } else if (activeTab === "feedbacks") {
         const { data } = await api.get(
           `/feedbacks/admin/pending?status=${feedbackFilter || "PENDING"}`,
@@ -261,20 +272,46 @@ export default function AdminDashboard() {
       return;
     }
 
-    const match = messages.find((item) => item._id === highlightedMessageId);
-    if (match) {
+    const searchTerm = messageSearch.trim().toLowerCase();
+    const sourceMessages = !searchTerm
+      ? messages
+      : messages.filter((msg) =>
+          [
+            msg.studioName,
+            msg.studioEmail,
+            msg.recipientName,
+            msg.recipientEmail,
+            msg.subject,
+            msg.message,
+            msg.status,
+          ]
+            .map((value) => String(value || "").toLowerCase())
+            .some((value) => value.includes(searchTerm)),
+        );
+
+    const matchIndex = sourceMessages.findIndex(
+      (item) => item._id === highlightedMessageId,
+    );
+    if (matchIndex !== -1) {
+      const pageForMessage = Math.floor(matchIndex / ADMIN_LIST_PAGE_SIZE) + 1;
+      setMessagePage(pageForMessage);
+
+      const match = sourceMessages[matchIndex];
       setSelectedMessage(match);
-      const element = document.getElementById(
-        `admin-message-${highlightedMessageId}`,
-      );
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+
+      requestAnimationFrame(() => {
+        const element = document.getElementById(
+          `admin-message-${highlightedMessageId}`,
+        );
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
     }
 
     const timer = setTimeout(() => setHighlightedMessageId(""), 3500);
     return () => clearTimeout(timer);
-  }, [activeTab, highlightedMessageId, messages]);
+  }, [activeTab, highlightedMessageId, messages, messageSearch]);
 
   useEffect(() => {
     if (
@@ -574,6 +611,174 @@ export default function AdminDashboard() {
     </span>
   );
 
+  const paginateList = (items, page) => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(items.length / ADMIN_LIST_PAGE_SIZE),
+    );
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * ADMIN_LIST_PAGE_SIZE;
+    return {
+      items: items.slice(start, start + ADMIN_LIST_PAGE_SIZE),
+      totalPages,
+      currentPage: safePage,
+    };
+  };
+
+  const normalizedStudioSearch = studioSearch.trim().toLowerCase();
+  const normalizedVendorSearch = vendorSearch.trim().toLowerCase();
+  const normalizedFeedbackSearch = feedbackSearch.trim().toLowerCase();
+  const normalizedMessageSearch = messageSearch.trim().toLowerCase();
+
+  const filteredUsers = useMemo(() => {
+    if (!normalizedStudioSearch) return users;
+    return users.filter((user) =>
+      [user.name, user.company, user.email, user.country, user.status]
+        .map((value) => String(value || "").toLowerCase())
+        .some((value) => value.includes(normalizedStudioSearch)),
+    );
+  }, [users, normalizedStudioSearch]);
+
+  const filteredVendors = useMemo(() => {
+    if (!normalizedVendorSearch) return vendors;
+    return vendors.filter((vendor) =>
+      [
+        vendor.name,
+        vendor.country,
+        vendor.size,
+        vendor.badgeVOE,
+        vendor.shortDescription,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .some((value) => value.includes(normalizedVendorSearch)),
+    );
+  }, [vendors, normalizedVendorSearch]);
+
+  const filteredFeedbacks = useMemo(() => {
+    if (!normalizedFeedbackSearch) return feedbacks;
+    return feedbacks.filter((fb) =>
+      [
+        fb.studioName,
+        fb.vendorId?.name,
+        fb.status,
+        fb.message,
+        fb.adminNote,
+        fb.flagReason,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .some((value) => value.includes(normalizedFeedbackSearch)),
+    );
+  }, [feedbacks, normalizedFeedbackSearch]);
+
+  const filteredMessages = useMemo(() => {
+    if (!normalizedMessageSearch) return messages;
+    return messages.filter((msg) =>
+      [
+        msg.studioName,
+        msg.studioEmail,
+        msg.recipientName,
+        msg.recipientEmail,
+        msg.subject,
+        msg.message,
+        msg.status,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .some((value) => value.includes(normalizedMessageSearch)),
+    );
+  }, [messages, normalizedMessageSearch]);
+
+  const studioPagination = useMemo(
+    () => paginateList(filteredUsers, studioPage),
+    [filteredUsers, studioPage],
+  );
+  const vendorPagination = useMemo(
+    () => paginateList(filteredVendors, vendorPage),
+    [filteredVendors, vendorPage],
+  );
+  const feedbackPagination = useMemo(
+    () => paginateList(filteredFeedbacks, feedbackPage),
+    [filteredFeedbacks, feedbackPage],
+  );
+  const messagePagination = useMemo(
+    () => paginateList(filteredMessages, messagePage),
+    [filteredMessages, messagePage],
+  );
+
+  useEffect(() => {
+    setStudioPage(1);
+  }, [studioSearch, userFilter]);
+
+  useEffect(() => {
+    setVendorPage(1);
+  }, [vendorSearch]);
+
+  useEffect(() => {
+    setFeedbackPage(1);
+  }, [feedbackSearch, feedbackFilter]);
+
+  useEffect(() => {
+    setMessagePage(1);
+  }, [messageSearch, messageFilter]);
+
+  useEffect(() => {
+    if (activeTab !== "messages") return;
+    if (messagePagination.currentPage !== messagePage) {
+      setMessagePage(messagePagination.currentPage);
+    }
+  }, [activeTab, messagePagination.currentPage, messagePage]);
+
+  useEffect(() => {
+    if (activeTab !== "messages") return;
+    if (filteredMessages.length === 0) {
+      setSelectedMessage(null);
+      return;
+    }
+
+    setSelectedMessage((prev) => {
+      if (prev && filteredMessages.some((item) => item._id === prev._id)) {
+        return prev;
+      }
+      return filteredMessages[0];
+    });
+  }, [activeTab, filteredMessages]);
+
+  const renderPagination = (pagination, onChangePage, idPrefix) => {
+    if (pagination.totalPages <= 1) return null;
+
+    return (
+      <div
+        style={{
+          marginTop: "var(--space-md)",
+          display: "flex",
+          gap: "var(--space-sm)",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => onChangePage(pagination.currentPage - 1)}
+          disabled={pagination.currentPage <= 1}
+          id={`${idPrefix}-prev`}
+        >
+          Previous
+        </button>
+        <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+          Page {pagination.currentPage} / {pagination.totalPages}
+        </span>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => onChangePage(pagination.currentPage + 1)}
+          disabled={pagination.currentPage >= pagination.totalPages}
+          id={`${idPrefix}-next`}
+        >
+          Next
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="admin-dashboard-page">
       <div className="page-wrapper admin-dashboard-content">
@@ -699,6 +904,19 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
+              <div style={{ marginBottom: "var(--space-md)" }}>
+                <label className="form-label" htmlFor="studios-search-input">
+                  Search Studios
+                </label>
+                <input
+                  id="studios-search-input"
+                  className="form-input"
+                  placeholder="Search by name, company, email, country, status"
+                  value={studioSearch}
+                  onChange={(e) => setStudioSearch(e.target.value)}
+                />
+              </div>
+
               {loading ? (
                 <div className="loading">
                   <div className="spinner" />
@@ -718,7 +936,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.length === 0 ? (
+                      {filteredUsers.length === 0 ? (
                         <tr>
                           <td
                             colSpan="7"
@@ -732,7 +950,7 @@ export default function AdminDashboard() {
                           </td>
                         </tr>
                       ) : (
-                        users.map((user) => (
+                        studioPagination.items.map((user) => (
                           <tr key={user._id}>
                             <td
                               style={{
@@ -875,13 +1093,26 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               )}
+
+              {!loading &&
+                renderPagination(
+                  studioPagination,
+                  setStudioPage,
+                  "studios-pagination",
+                )}
             </div>
           )}
 
           {/* Vendors Tab */}
           {activeTab === "vendors" && (
             <div className="fade-in">
-              <div style={{ marginBottom: "var(--space-md)" }}>
+              <div
+                style={{
+                  marginBottom: "var(--space-md)",
+                  display: "grid",
+                  gap: "var(--space-sm)",
+                }}
+              >
                 <button
                   className="btn btn-primary"
                   onClick={() => navigate("/admin/vendors/new")}
@@ -889,6 +1120,19 @@ export default function AdminDashboard() {
                 >
                   + Add Vendor
                 </button>
+
+                <div>
+                  <label className="form-label" htmlFor="vendors-search-input">
+                    Search Vendors
+                  </label>
+                  <input
+                    id="vendors-search-input"
+                    className="form-input"
+                    placeholder="Search by name, country, size, badge"
+                    value={vendorSearch}
+                    onChange={(e) => setVendorSearch(e.target.value)}
+                  />
+                </div>
               </div>
 
               {loading ? (
@@ -909,7 +1153,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {vendors.length === 0 ? (
+                      {filteredVendors.length === 0 ? (
                         <tr>
                           <td
                             colSpan="6"
@@ -923,7 +1167,7 @@ export default function AdminDashboard() {
                           </td>
                         </tr>
                       ) : (
-                        vendors.map((vendor) => (
+                        vendorPagination.items.map((vendor) => (
                           <tr key={vendor._id}>
                             <td
                               style={{
@@ -946,24 +1190,34 @@ export default function AdminDashboard() {
                             <td>{vendor.globalScore?.toFixed(1)}</td>
                             <td>
                               <div className="admin-actions">
-                                <button
-                                  className="btn btn-secondary btn-sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/admin/vendors/${vendor._id}/edit`,
-                                    )
-                                  }
-                                  id={`edit-${vendor._id}`}
-                                >
-                                  ✏ Edit
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleDeleteVendor(vendor._id)}
-                                  id={`delete-${vendor._id}`}
-                                >
-                                  🗑
-                                </button>
+                                {vendor.source === "odoo" ? (
+                                  <span style={{ color: "var(--text-muted)" }}>
+                                    —
+                                  </span>
+                                ) : (
+                                  <>
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={() =>
+                                        navigate(
+                                          `/admin/vendors/${vendor._id}/edit`,
+                                        )
+                                      }
+                                      id={`edit-${vendor._id}`}
+                                    >
+                                      ✏ Edit
+                                    </button>
+                                    <button
+                                      className="btn btn-danger btn-sm"
+                                      onClick={() =>
+                                        handleDeleteVendor(vendor._id)
+                                      }
+                                      id={`delete-${vendor._id}`}
+                                    >
+                                      🗑
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -973,6 +1227,13 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               )}
+
+              {!loading &&
+                renderPagination(
+                  vendorPagination,
+                  setVendorPage,
+                  "vendors-pagination",
+                )}
             </div>
           )}
 
@@ -999,18 +1260,31 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
+              <div style={{ marginBottom: "var(--space-md)" }}>
+                <label className="form-label" htmlFor="feedbacks-search-input">
+                  Search Feedbacks
+                </label>
+                <input
+                  id="feedbacks-search-input"
+                  className="form-input"
+                  placeholder="Search by studio, vendor, status, message"
+                  value={feedbackSearch}
+                  onChange={(e) => setFeedbackSearch(e.target.value)}
+                />
+              </div>
+
               {loading ? (
                 <div className="loading">
                   <div className="spinner" />
                 </div>
-              ) : feedbacks.length === 0 ? (
+              ) : filteredFeedbacks.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon"></div>
                   <h3>No feedbacks found</h3>
                 </div>
               ) : (
                 <div className="admin-feedback-list">
-                  {feedbacks.map((fb) => (
+                  {feedbackPagination.items.map((fb) => (
                     <div
                       className={`admin-feedback-card ${fb.isFlagged ? "admin-feedback-flagged" : ""} ${highlightedFeedbackId === fb._id ? "admin-item-highlight" : ""}`}
                       key={fb._id}
@@ -1123,6 +1397,13 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+
+              {!loading &&
+                renderPagination(
+                  feedbackPagination,
+                  setFeedbackPage,
+                  "feedbacks-pagination",
+                )}
             </div>
           )}
 
@@ -1174,11 +1455,24 @@ export default function AdminDashboard() {
                 )}
               </div>
 
+              <div style={{ marginBottom: "var(--space-md)" }}>
+                <label className="form-label" htmlFor="messages-search-input">
+                  Search Messages
+                </label>
+                <input
+                  id="messages-search-input"
+                  className="form-input"
+                  placeholder="Search by sender, email, subject, or message"
+                  value={messageSearch}
+                  onChange={(e) => setMessageSearch(e.target.value)}
+                />
+              </div>
+
               {loading ? (
                 <div className="loading">
                   <div className="spinner" />
                 </div>
-              ) : messages.length === 0 ? (
+              ) : filteredMessages.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">📩</div>
                   <h3>No messages found</h3>
@@ -1186,7 +1480,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="admin-messages-layout">
                   <div className="admin-messages-list admin-messages-list-pane">
-                    {messages.map((msg) =>
+                    {messagePagination.items.map((msg) =>
                       (() => {
                         const badge = getAdminMessageBadge(msg);
                         return (
@@ -1369,6 +1663,13 @@ export default function AdminDashboard() {
                     })()}
                 </div>
               )}
+
+              {!loading &&
+                renderPagination(
+                  messagePagination,
+                  setMessagePage,
+                  "messages-pagination",
+                )}
 
               {composeOpen && (
                 <div
