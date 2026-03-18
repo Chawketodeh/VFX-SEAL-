@@ -7,6 +7,7 @@ import registerstep from "../assets/register-step.avif";
 import verificationstep from "../assets/verification-step.jfif";
 import AssessorsSection from "../components/AssessorsSection";
 import aboutImage from "../assets/about-image.webp";
+import voeLogo from "../assets/BADGE_VOE/Web_Logo_Audit_B_transp.png";
 
 const explorstep =
   "https://images.unsplash.com/photo-1487014679447-9f8336841d58?auto=format&fit=crop&w=1200&q=80";
@@ -50,14 +51,14 @@ export default function HomePage() {
         </div>
         <div className="hero-content">
           <h1 className="hero-title">
-            The <span className="hero-accent">Trusted </span> Gateway
+            The <span className="hero-accent">Selective Marketplace</span>
             <br />
-            to find VFX vendors.
+            for VFX Vendor Discovery.
           </h1>
           <p className="hero-subtitle">
-            VFX Seal helps VFX professionals discover certified, assessed, and
-            trusted vendor partners. Explore in confidence and decide when to
-            activate your trusted professional profile.
+            The Seal gives VFX professionals free access to search, compare, and
+            evaluate vendor profiles with full transparency on what is
+            VOE-audited, self-declared, or not audited.
           </p>
           <div className="hero-cta">
             <Link
@@ -87,8 +88,8 @@ export default function HomePage() {
             <span className="section-tag">Process</span>
             <h2 className="section-title">How It Works</h2>
             <p className="section-subtitle">
-              From registration to exploration — your journey to verified VFX
-              partnerships
+              From access to comparison - your marketplace workflow for VFX
+              partner research
             </p>
           </div>
           <div className="how-grid-enhanced">
@@ -257,9 +258,9 @@ export default function HomePage() {
                   Unlock the Full Vendor Directory
                 </h3>
                 <p className="unlock-description">
-                  Access certified VFX vendors, trusted partners, operational
-                  scores, and exclusive directory insights reserved for approved
-                  members.
+                  Access VOE-audited vendors, self-declared data, and
+                  non-audited profile information in one transparent directory
+                  for side-by-side comparison.
                 </p>
                 <div className="unlock-actions">
                   <Link to="/register" className="btn btn-primary-gold btn-lg">
@@ -285,7 +286,7 @@ export default function HomePage() {
             <span className="section-tag">About</span>
             <h2 className="section-title">About The Seal</h2>
             <p className="section-subtitle">
-              The industry's trusted vendor platform
+              A selective marketplace built for VFX studio decision-makers
             </p>
           </div>
 
@@ -294,18 +295,16 @@ export default function HomePage() {
             <div className="about-content-column">
               {/* Highlight Introduction Box */}
               <div className="about-highlight-box">
-                {/* prettier-ignore */}
                 <p>
-                  The Seal is an exclusive platform designed specifically for VFX studio executives. 
-
-                  </p>
+                  The Seal is a selective marketplace where VFX studios can
+                  freely access vendor information, compare capabilities, and
+                  research partners before engagement.
+                </p>
                 <br />
                 <p>
-                  Our mission is to help you search, compare and evaluate VFX
-                  vendors with full transparency on the information displayed.
-                  It is the only platform where you can access VFX vendor
-                  profiles and see clearly what is verified, including
-                  VOE‑audited reports and additional company information.
+                  Our role is marketplace access and transparency: every vendor
+                  profile indicates the verification level, so professionals can
+                  immediately distinguish audited facts from non-audited data.
                 </p>
               </div>
 
@@ -316,9 +315,8 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>Exclusive</h3>
                     <p>
-                      Access limited to verified VFX studios and
-                      decision-makers. Our exclusive membership ensures
-                      high-quality networking and trusted partnerships.
+                      Built for VFX studio professionals and decision-makers who
+                      need a serious, curated environment for vendor comparison.
                     </p>
                   </div>
                 </div>
@@ -328,9 +326,9 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>No-Paywall Access</h3>
                     <p>
-                      Complete access to vendor profiles, scores, and reports at
-                      no cost for studios. We believe quality information should
-                      be freely available to industry professionals.
+                      Vendor profile access is free for studios. The marketplace
+                      is designed for open research and comparison, not
+                      paywalled discovery.
                     </p>
                   </div>
                 </div>
@@ -340,10 +338,9 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>Verified & Certified Vendor Network</h3>
                     <p>
-                      The Seal brings together different levels of verification.
-                      VOE‑audited vendors are clearly identified as certified,
-                      while self‑assessed and non‑audited information is also
-                      available and transparently labelled.
+                      The Seal shows multiple trust levels: VOE-audited and
+                      certified vendors, self-declared information, and
+                      non-audited data - each clearly labeled.
                     </p>
                   </div>
                 </div>
@@ -353,9 +350,9 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>Direct Access & Full Autonomy</h3>
                     <p>
-                      Browse, compare, and contact vendors directly. No
-                      intermediaries, no commissions, no restrictions on your
-                      business relationships.
+                      Browse, compare, and contact vendors directly with no
+                      intermediary model and no platform commission on your
+                      relationships.
                     </p>
                   </div>
                 </div>
@@ -365,9 +362,9 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>Strict Data Privacy & Confidentiality</h3>
                     <p>
-                      Enterprise-grade security protects your information.
-                      Vendors only see company name and logo — no personal
-                      details or contact information shared.
+                      Confidentiality is built in. Users control contact
+                      disclosure and can research vendors discreetly before
+                      opening communication.
                     </p>
                   </div>
                 </div>
@@ -377,9 +374,9 @@ export default function HomePage() {
                   <div className="feature-content">
                     <h3>360° Insight & Vendor Comparison</h3>
                     <p>
-                      Granular scoring and qualitative information across key
-                      operational areas help you benchmark vendors and identify
-                      the best match for each project.
+                      Compare operational strengths, project fit, and trust
+                      levels side by side to choose the best vendor for each
+                      production need.
                     </p>
                   </div>
                 </div>
@@ -387,11 +384,11 @@ export default function HomePage() {
                 <div className="about-feature-item">
                   <div className="feature-separator"></div>
                   <div className="feature-content">
-                    <h3>Reliable, Verified Information</h3>
+                    <h3>Transparent Verification</h3>
                     <p>
-                      All vendor data verified through independent assessment.
-                      Regular re-evaluations ensure information remains current
-                      and accurate.
+                      The platform makes verification status explicit, so teams
+                      always know what has been independently audited and what
+                      remains vendor-declared.
                     </p>
                   </div>
                 </div>
@@ -408,6 +405,93 @@ export default function HomePage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="seal-voe-section">
+        <div className="container">
+          <div className="section-header">
+            <span className="section-tag">Transparency</span>
+            <h2 className="section-title">
+              The Seal & VOE – How it works together
+            </h2>
+          </div>
+
+          <div className="seal-voe-grid">
+            <article className="seal-voe-card">
+              <p>
+                The Seal is a completely free marketplace and research platform
+                for VFX professionals.
+              </p>
+              <p>
+                It exists thanks to our partnership with{" "}
+                <b>VOE(VFX Operational Excellence)</b> , an independent audit
+                label dedicated to VFX studios and vendors. VOE is the audit and
+                certification body: their expert panel reviews and validates the
+                operational information provided by vendors.
+              </p>
+
+              <div className="voe-brand-row">
+                <img
+                  src={voeLogo}
+                  alt="VOE - VFX Operational Excellence"
+                  className="voe-brand-logo"
+                />
+                <a
+                  href="https://voe-standard.vercel.app"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="voe-brand-link"
+                >
+                  Visit VOE Website
+                </a>
+              </div>
+
+              <p>On The Seal, you will find different levels of information:</p>
+              <p>
+                <b>* VOE-audited vendors</b> – clearly highlighted. Their
+                information and reports have been reviewed by VOE experts.
+              </p>
+              <p>
+                <b> * Self-declared / non-audited information</b> – still
+                visible, but explicitly labelled as "not audited by VOE".
+              </p>
+              <p>
+                This way, professionals keep full access to the marketplace
+                while always knowing exactly what has been verified and what has
+                not.
+              </p>
+
+              <p className="seal-voe-closing">
+                The Seal provides open access and comparison; VOE provides the
+                independent audit that makes trusted, verified information
+                possible.
+              </p>
+            </article>
+
+            <article className="seal-voe-card">
+              <h3 className="seal-voe-subtitle">
+                Request an Audit via The Seal
+              </h3>
+              <p>
+                Through The Seal, you can also request an audit for a vendor by
+                the VOE, or send us a message if there is specific information
+                you would like to see audited before working with a studio.
+              </p>
+              <p>
+                The studio will receive a notification that a professional user
+                has requested an audit or a deeper verification of certain
+                information or aspects of their profile. You can choose to
+                remain anonymous,show only hte company you work for or open a
+                direct conversation with them.
+              </p>
+              <p>
+                We encourage open communication between member and vendors, but
+                we keeping the confidentiality of our members as a priority. It
+                is always they choice to to the first step of communciation.
+              </p>
+            </article>
           </div>
         </div>
       </section>
