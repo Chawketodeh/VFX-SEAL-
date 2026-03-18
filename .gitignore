@@ -58,10 +58,10 @@ PROJECT_PROFESSIONALIZATION_ROADMAP.md
 UNREAD_LOGIC_SUMMARY.md
 
 # CSS audit / generated docs
-frontend/CSS_DEPENDENCY_MAP.md
-frontend/CSS_DUPLICATE_SELECTORS_REPORT.txt
-frontend/CSS_UNUSED_CANDIDATES.txt
-frontend/VISUAL_REGRESSION_CHECKLIST.md
+vfx-seal/frontend/CSS_DEPENDENCY_MAP.md
+vfx-seal/frontend/CSS_DUPLICATE_SELECTORS_REPORT.txt
+vfx-seal/frontend/CSS_UNUSED_CANDIDATES.txt
+vfx-seal/frontend/VISUAL_REGRESSION_CHECKLIST.md
 
 # =========================
 # OPTIONAL (UNCOMMENT IF NEEDED)
