@@ -1,12 +1,71 @@
-node_modules
-dist
+# =========================
+# ENV FILES (SECURITY)
+# =========================
 .env
+.env.*
+!.env.example
+
+# =========================
+# NODE MODULES
+# =========================
+node_modules/
+*/node_modules/
+
+# =========================
+# BUILD / DIST
+# =========================
+dist/
+build/
+*/dist/
+*/build/
+
+# =========================
+# LOGS
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / EDITOR
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# CACHE
+# =========================
+.cache/
+.parcel-cache/
+.next/
+coverage/
+
+# =========================
+# PROJECT SPECIFIC FILES
+# =========================
 COMMAND.txt
 PROJECT_PROFESSIONALIZATION_ROADMAP.md
-UNREAD_LOGIC_SUMMARY.mdQ
+UNREAD_LOGIC_SUMMARY.md
 
-# Generated CSS audit and stabilization docs
+# CSS audit / generated docs
 frontend/CSS_DEPENDENCY_MAP.md
 frontend/CSS_DUPLICATE_SELECTORS_REPORT.txt
 frontend/CSS_UNUSED_CANDIDATES.txt
 frontend/VISUAL_REGRESSION_CHECKLIST.md
+
+# =========================
+# OPTIONAL (UNCOMMENT IF NEEDED)
+# =========================
+# *.md
+# *.pdf
+# *.zip
