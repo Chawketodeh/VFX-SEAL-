@@ -160,6 +160,12 @@ export default function Navbar() {
             {isAdmin ? (
               <>
                 <Link
+                  to="/"
+                  className={location.pathname === "/" ? "active" : ""}
+                >
+                  Home
+                </Link>
+                <Link
                   to="/admin"
                   className={isActive("/admin") ? "active" : ""}
                 >
