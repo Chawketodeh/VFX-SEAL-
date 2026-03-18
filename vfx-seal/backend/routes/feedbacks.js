@@ -24,6 +24,7 @@ const resolveVendorForFeedback = async ({
   const normalizedSlug = normalizeVendorRef(
     vendorSlug || vendorId || vendorName,
   );
+  const normalizedNameSlug = normalizeVendorRef(vendorName);
 
   if (mongoose.Types.ObjectId.isValid(vendorId)) {
     const byId = await Vendor.findById(vendorId);
@@ -35,20 +36,45 @@ const resolveVendorForFeedback = async ({
     if (bySlug) return bySlug;
   }
 
+  if (normalizedNameSlug) {
+    const byNameSlug = await Vendor.findOne({ slug: normalizedNameSlug });
+    if (byNameSlug) return byNameSlug;
+  }
+
   if (!createIfMissing) return null;
 
   const fallbackName = String(
     vendorName || vendorSlug || vendorId || "Vendor",
   ).trim();
-  return Vendor.create({
-    name: fallbackName,
-    slug: normalizedSlug || normalizeVendorRef(fallbackName),
-    country: "Unknown",
-    size: "Micro",
-    badgeVOE: "None",
-    globalScore: 0,
-    services: [],
-  });
+  const fallbackSlug =
+    normalizedSlug ||
+    normalizedNameSlug ||
+    normalizeVendorRef(fallbackName) ||
+    `vendor-${Date.now()}`;
+
+  // Atomic upsert avoids duplicate-key races when many reviews target same Odoo vendor.
+  const vendor = await Vendor.findOneAndUpdate(
+    { slug: fallbackSlug },
+    {
+      $setOnInsert: {
+        name: fallbackName || `Vendor ${fallbackSlug}`,
+        slug: fallbackSlug,
+        country: "Unknown",
+        size: "Micro",
+        badgeVOE: "None",
+        globalScore: 0,
+        services: [],
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+      runValidators: true,
+    },
+  );
+
+  return vendor;
 };
 
 // POST /api/feedbacks — submit feedback (any authenticated user)
@@ -74,12 +100,22 @@ router.post("/", protect, async (req, res) => {
         .json({ message: "Message must be under 2000 characters" });
     }
 
-    const resolvedVendor = await resolveVendorForFeedback({
-      vendorId,
-      vendorSlug,
-      vendorName,
-      createIfMissing: true,
-    });
+    let resolvedVendor;
+    try {
+      resolvedVendor = await resolveVendorForFeedback({
+        vendorId,
+        vendorSlug,
+        vendorName,
+        createIfMissing: true,
+      });
+    } catch (mappingError) {
+      console.error("Submit feedback mapping error:", mappingError);
+      return res.status(500).json({
+        message: "Feedback vendor mapping failed",
+        reason: mappingError?.message || "Unknown mapping error",
+        stage: "resolveVendorForFeedback",
+      });
+    }
 
     if (!resolvedVendor?._id) {
       return res.status(400).json({ message: "Invalid vendor reference" });
@@ -103,17 +139,27 @@ router.post("/", protect, async (req, res) => {
       .filter(Boolean)
       .join(" — ");
 
-    const feedback = await Feedback.create({
-      vendorId: resolvedVendor._id,
-      studioId: req.user._id,
-      studioName: displayName || req.user?.email || "User",
-      rating,
-      message,
-      status: moderationResult.isFlagged ? "PENDING" : "PENDING", // All feedback starts as PENDING
-      isFlagged: moderationResult.isFlagged,
-      flagReason: moderationResult.reason,
-      moderationStatus: moderationResult.isFlagged ? "flagged" : "visible",
-    });
+    let feedback;
+    try {
+      feedback = await Feedback.create({
+        vendorId: resolvedVendor._id,
+        studioId: req.user._id,
+        studioName: displayName || req.user?.email || "User",
+        rating,
+        message,
+        status: "PENDING", // All feedback starts as PENDING
+        isFlagged: moderationResult.isFlagged,
+        flagReason: moderationResult.reason,
+        moderationStatus: moderationResult.isFlagged ? "flagged" : "visible",
+      });
+    } catch (feedbackCreateError) {
+      console.error("Submit feedback create error:", feedbackCreateError);
+      return res.status(500).json({
+        message: "Feedback save failed",
+        reason: feedbackCreateError?.message || "Unknown feedback save error",
+        stage: "createFeedback",
+      });
+    }
 
     // Notify all admins
     const admins = await User.find({ role: "ADMIN" });
@@ -162,7 +208,11 @@ router.post("/", protect, async (req, res) => {
       });
     }
     console.error("Submit feedback error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      reason: error?.message || "Unknown error",
+      stage: "submitFeedback",
+    });
   }
 });
 

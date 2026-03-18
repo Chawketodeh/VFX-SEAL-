@@ -62,7 +62,15 @@ export default function FeedbackSection({ vendorId, vendorName, vendorSlug }) {
       setMessage("");
       fetchFeedbacks();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit feedback");
+      const apiMessage = err.response?.data?.message;
+      const apiStage = err.response?.data?.stage;
+      const apiReason = err.response?.data?.reason;
+      const details = [apiStage, apiReason].filter(Boolean).join(" — ");
+      setError(
+        details
+          ? `${apiMessage || "Failed to submit feedback"} (${details})`
+          : apiMessage || "Failed to submit feedback",
+      );
     } finally {
       setSubmitting(false);
     }

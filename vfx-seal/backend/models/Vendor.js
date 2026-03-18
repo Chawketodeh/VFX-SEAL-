@@ -97,7 +97,9 @@ vendorSchema.index({ createdAt: -1 }); // Recent vendors
 
 // Auto-generate slug from name before saving
 vendorSchema.pre("save", function (next) {
-  if (this.isModified("name") || !this.slug) {
+  const shouldGenerateFromName =
+    !this.slug || (this.isModified("name") && !this.isModified("slug"));
+  if (shouldGenerateFromName) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
   next();
