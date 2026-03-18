@@ -108,6 +108,17 @@ export default function VendorCarousel({ title, vendors, category }) {
     }
   };
 
+  const getSampleName = (index) => {
+    const categoryLabelMap = {
+      topRated: "Featured",
+      veterans: "Established",
+      bigTeam: "Large Team",
+      newStudios: "Emerging",
+    };
+    const label = categoryLabelMap[category] || "Sample";
+    return `John Doe Studio ${label} ${index + 1}`;
+  };
+
   if (!vendors || vendors.length === 0) {
     return null;
   }
@@ -136,8 +147,9 @@ export default function VendorCarousel({ title, vendors, category }) {
 
       <div className="carousel-container">
         <div className="carousel-track" ref={scrollRef} onScroll={handleScroll}>
-          {vendors.map((vendor) => {
+          {vendors.map((vendor, index) => {
             const badgeType = getBadgeType(vendor);
+            const sampleName = getSampleName(index);
 
             return (
               <Link
@@ -148,50 +160,27 @@ export default function VendorCarousel({ title, vendors, category }) {
                 <div className="carousel-card-inner">
                   {/* Studio Logo/Avatar */}
                   <div className="carousel-vendor-logo">
-                    {vendor.logo ? (
-                      <>
-                        <img
-                          src={vendor.logo}
-                          alt={vendor.name}
-                          loading="lazy"
-                          decoding="async"
-                          onError={handleVendorImageError}
-                        />
-                        <span
-                          className="logo-placeholder"
-                          style={{ display: "none" }}
-                        >
-                          {vendor.name.charAt(0)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="logo-placeholder">
-                        {vendor.name.charAt(0)}
-                      </span>
-                    )}
+                    <span className="logo-placeholder">
+                      {sampleName.charAt(0)}
+                    </span>
                   </div>
 
                   {/* Studio Info */}
                   <div className="carousel-vendor-info">
-                    <h4 className="carousel-vendor-name">{vendor.name}</h4>
+                    <h4 className="carousel-vendor-name">{sampleName}</h4>
                     <div className="carousel-vendor-meta">
                       <span className="carousel-location">
-                        <FiMapPin size={14} /> {vendor.country}
+                        <FiMapPin size={14} /> Sample Location
                       </span>
                       <span className="carousel-team-size">
-                        <FiUsers size={14} /> {getTeamSizeNumber(vendor.size)}
+                        <FiUsers size={14} /> Team size hidden
                       </span>
                     </div>
 
-                    {/* VOE Score */}
+                    {/* Stars-only preview (no numeric score for launch preview) */}
                     <div className="carousel-score-container">
-                      <div
-                        className={`carousel-score-badge ${getBadgeStyleClass(badgeType)}`}
-                      >
-                        <span className="score">
-                          {vendor.globalScore?.toFixed(1) || "N/A"}
-                        </span>
-                        <span className="max">/10</span>
+                      <div className="carousel-score-badge gold preview-stars-badge">
+                        <span className="star-rating-preview">★★★★★</span>
                       </div>
                       <div
                         className={`carousel-badge ${getBadgeStyleClass(badgeType)}`}

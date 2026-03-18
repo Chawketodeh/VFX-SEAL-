@@ -157,7 +157,7 @@ export default function VendorDiscovery() {
           {/* Large Teams */}
           {vendorCategories.bigTeam.length > 0 && (
             <VendorCarousel
-              title="Big Teams & Studios"
+              title="Large Team Studios"
               vendors={vendorCategories.bigTeam}
               category="bigTeam"
             />
@@ -166,7 +166,7 @@ export default function VendorDiscovery() {
           {/* New Studios */}
           {vendorCategories.newStudios.length > 0 && (
             <VendorCarousel
-              title="Rising Stars"
+              title="Emerging Studios"
               vendors={vendorCategories.newStudios}
               category="newStudios"
             />

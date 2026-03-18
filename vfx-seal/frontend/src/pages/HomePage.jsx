@@ -183,8 +183,8 @@ export default function HomePage() {
                 <div className="vendor-showcase-header">
                   <div className="vendor-showcase-logo">JD</div>
                   <div className="vendor-showcase-info">
-                    <h3 className="masked-vendor-name">John Doe Studio</h3>
-                    <span className="vendor-location">Los Angeles, USA</span>
+                    <h3 className="masked-vendor-name">John Doe Studio A</h3>
+                    <span className="vendor-location">Sample City, Region</span>
                   </div>
                   <div className="voe-score-badge gold preview-stars-badge">
                     <span className="star-rating-preview">★★★★★</span>
@@ -208,8 +208,8 @@ export default function HomePage() {
                 <div className="vendor-showcase-header">
                   <div className="vendor-showcase-logo">NP</div>
                   <div className="vendor-showcase-info">
-                    <h3 className="masked-vendor-name">North Pixel Studio</h3>
-                    <span className="vendor-location">Vancouver, Canada</span>
+                    <h3 className="masked-vendor-name">John Doe Studio B</h3>
+                    <span className="vendor-location">Sample City, Region</span>
                   </div>
                   <div className="voe-score-badge gold preview-stars-badge">
                     <span className="star-rating-preview">★★★★★</span>
@@ -233,8 +233,8 @@ export default function HomePage() {
                 <div className="vendor-showcase-header">
                   <div className="vendor-showcase-logo">AL</div>
                   <div className="vendor-showcase-info">
-                    <h3 className="masked-vendor-name">Alpha VFX Lab</h3>
-                    <span className="vendor-location">London, UK</span>
+                    <h3 className="masked-vendor-name">John Doe Studio C</h3>
+                    <span className="vendor-location">Sample City, Region</span>
                   </div>
                   <div className="voe-score-badge gold preview-stars-badge">
                     <span className="star-rating-preview">★★★★★</span>
