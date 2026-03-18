@@ -875,6 +875,7 @@ h4 { font-size: 1.125rem; }
   padding: var(--space-lg);
   position: sticky;
   top: 96px;
+  height: fit-content;
 }
 
 .filter-title {
@@ -1164,11 +1165,21 @@ h4 { font-size: 1.125rem; }
 }
 
 /* ---------- Vendors Page ---------- */
+.vendors-page {
+  position: relative;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(201, 163, 79, 0.08) 0%, transparent 38%),
+    radial-gradient(circle at 82% 22%, rgba(59, 130, 246, 0.06) 0%, transparent 32%),
+    linear-gradient(180deg, rgba(5, 7, 12, 0.96) 0%, rgba(8, 12, 22, 0.96) 100%);
+}
+
 .vendors-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: var(--space-xl);
   align-items: start;
+  width: 100%;
+  overflow: visible;
 }
 
 .vendors-header {
@@ -1192,8 +1203,35 @@ h4 { font-size: 1.125rem; }
 
 .vendors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-lg);
+  width: 100%;
+  overflow: visible;
+}
+
+.marketplace-featured-band {
+  margin-bottom: var(--space-xl);
+}
+
+.marketplace-featured-header {
+  margin-bottom: var(--space-md);
+}
+
+.marketplace-featured-header h2 {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.marketplace-featured-header p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.marketplace-featured-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+  width: 100%;
 }
 
 /* ---------- Vendor Detail ---------- */
@@ -3079,6 +3117,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   transition: transform 0.5s ease;
 }
 
@@ -3110,7 +3149,9 @@ input[type="checkbox"]:checked + .checkmark::after {
   padding: var(--space-md);
   background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .netflix-card-body {
@@ -3204,6 +3245,63 @@ input[type="checkbox"]:checked + .checkmark::after {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
+}
+
+.marketplace-card.is-audited {
+  border-color: rgba(246, 231, 192, 0.22);
+  box-shadow: 0 8px 26px rgba(201, 163, 79, 0.14);
+}
+
+.marketplace-card.is-regular {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.marketplace-card.is-featured {
+  border-color: rgba(246, 231, 192, 0.28);
+}
+
+.vendor-verification-tier {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.vendor-verification-tier.tier-audited {
+  background: rgba(246, 231, 192, 0.16);
+  border: 1px solid rgba(246, 231, 192, 0.35);
+  color: var(--accent);
+}
+
+.vendor-verification-tier.tier-self-assessed {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: #fbbf24;
+}
+
+.vendor-verification-tier.tier-non-audited {
+  background: rgba(100, 116, 139, 0.16);
+  border: 1px solid rgba(100, 116, 139, 0.32);
+  color: #cbd5e1;
+}
+
+.vendor-sponsored-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #08101d;
+  background: linear-gradient(135deg, #f7db9a 0%, #c89232 100%);
+  border: 1px solid rgba(247, 219, 154, 0.6);
 }
 
 .vendors-header-top {
@@ -5252,6 +5350,10 @@ input[type="checkbox"]:checked + .checkmark::after {
     grid-template-columns: 1fr;
   }
 
+  .marketplace-featured-row {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
   .how-grid {
     grid-template-columns: 1fr;
     gap: var(--space-lg);
@@ -5296,6 +5398,18 @@ input[type="checkbox"]:checked + .checkmark::after {
   .hero-stats {
     flex-direction: column;
     gap: var(--space-md);
+  }
+
+  .marketplace-featured-header h2 {
+    font-size: 1rem;
+  }
+
+  .marketplace-featured-header p {
+    font-size: 0.8rem;
+  }
+
+  .marketplace-featured-row {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 
   .hero-stat-divider {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ContactModal from "../components/ContactModal";
@@ -8,11 +8,16 @@ import {
   VendorFilterSkeleton,
 } from "../components/VendorSkeleton";
 import { useVendors } from "../hooks/useVendors";
-import { FiSearch, FiStar, FiMapPin } from "react-icons/fi";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiMapPin,
+  FiSearch,
+  FiStar,
+} from "react-icons/fi";
 import badgeGold from "../assets/BADGE_VOE/Badges_01_VOE_transp.png";
 import badgeSilver from "../assets/BADGE_VOE/Badges_02_VOE_transp.png";
 import badgeCandidate from "../assets/BADGE_VOE/Badges_05_VOE_transp.png";
-
 const BADGE_IMAGES = {
   Gold: badgeGold,
   Silver: badgeSilver,
@@ -25,7 +30,7 @@ export default function VendorsPage() {
   const navigate = useNavigate();
   const { isAdmin, isLoggedIn } = useAuth();
   const [contactOpen, setContactOpen] = useState(false);
-
+  const featuredRowRef = useRef(null);
   const {
     vendors,
     feedbackSummaries,
@@ -64,6 +69,37 @@ export default function VendorsPage() {
     updateSearch("");
   };
 
+  const validationTierOptions = [
+    { key: "audited", label: "VOE-audited", badges: ["Gold", "Silver"] },
+    { key: "self", label: "Self-assessed", badges: ["Candidate"] },
+    { key: "non", label: "Non-audited", badges: ["None"] },
+  ];
+
+  const isTierActive = (tierOption) =>
+    tierOption.badges.every((badge) => activeFilters.badge.includes(badge));
+
+  const toggleValidationTier = (tierOption) => {
+    const isActive = isTierActive(tierOption);
+    const currentBadges = new Set(activeFilters.badge);
+
+    if (isActive) {
+      tierOption.badges.forEach((badge) => currentBadges.delete(badge));
+    } else {
+      tierOption.badges.forEach((badge) => currentBadges.add(badge));
+    }
+
+    updateFilters({
+      ...activeFilters,
+      badge: Array.from(currentBadges),
+    });
+  };
+
+  const scrollFeaturedRow = (direction) => {
+    if (!featuredRowRef.current) return;
+    const scrollAmount = 360 * direction;
+    featuredRowRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  };
+
   const normalizeBadgeType = (badge) => {
     const raw = String(badge || "")
       .trim()
@@ -98,6 +134,39 @@ export default function VendorsPage() {
   const getBadgeType = (vendor) => {
     if (!vendor) return "None";
     return normalizeBadgeType(vendor.badgeVOE);
+  };
+
+  const isVOEAuditedBadge = (badgeType) => {
+    const normalized = normalizeBadgeType(badgeType);
+    return normalized === "Gold" || normalized === "Silver";
+  };
+
+  const isSponsoredVendor = (vendor) => {
+    return Boolean(vendor?.isSponsored || vendor?.sponsored || vendor?.boosted);
+  };
+
+  const getValidationTier = (badgeType) => {
+    const normalized = normalizeBadgeType(badgeType);
+    if (normalized === "Gold" || normalized === "Silver") {
+      return "VOE-audited";
+    }
+    if (normalized === "Candidate") {
+      return "Self-assessed";
+    }
+    return "Non-audited";
+  };
+
+  const getBadgeDisplayLabel = (badgeType) => {
+    const normalized = normalizeBadgeType(badgeType);
+    if (normalized === "None") return "Non-audited";
+    return normalized;
+  };
+
+  const getTierClass = (badgeType) => {
+    const normalized = normalizeBadgeType(badgeType);
+    if (normalized === "Gold" || normalized === "Silver") return "tier-audited";
+    if (normalized === "Candidate") return "tier-self-assessed";
+    return "tier-non-audited";
   };
 
   const renderStars = (rating) => {
@@ -145,6 +214,22 @@ export default function VendorsPage() {
   const pageStart = totalVendors === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const pageEnd = Math.min(currentPage * PAGE_SIZE, totalVendors);
 
+  const highlightedVendors = [...vendors]
+    .sort((a, b) => {
+      const aSponsored = isSponsoredVendor(a) ? 1 : 0;
+      const bSponsored = isSponsoredVendor(b) ? 1 : 0;
+      if (aSponsored !== bSponsored) return bSponsored - aSponsored;
+
+      const aAudited = isVOEAuditedBadge(getBadgeType(a)) ? 1 : 0;
+      const bAudited = isVOEAuditedBadge(getBadgeType(b)) ? 1 : 0;
+      if (aAudited !== bAudited) return bAudited - aAudited;
+
+      const aScore = Number(a.globalScore) || 0;
+      const bScore = Number(b.globalScore) || 0;
+      return bScore - aScore;
+    })
+    .slice(0, 8);
+
   const getVisiblePages = () => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -175,10 +260,10 @@ export default function VendorsPage() {
           <div className="vendors-header slide-up">
             <div className="vendors-header-top">
               <div>
-                <h1>VOE Certified Vendors</h1>
+                <h1>The Seal Marketplace</h1>
                 <p>
-                  Discover and evaluate top-tier VFX vendors worldwide,
-                  certified by the VFX Operational Excellence program.
+                  Compare vendors with transparent validation layers:
+                  VOE-audited, self-assessed, and non-audited profiles.
                 </p>
               </div>
               {!isAdmin && (
@@ -264,34 +349,25 @@ export default function VendorsPage() {
                     </div>
                   )}
 
-                  {filters.badges && filters.badges.length > 0 && (
-                    <div className="filter-group">
-                      <div className="filter-group-title">VOE Badge</div>
-                      {["Gold", "Silver", "Candidate", "None"]
-                        .filter((b) => filters.badges.includes(b))
-                        .map((b) => (
-                          <div
-                            key={b}
-                            className={`filter-option ${activeFilters.badge.includes(b) ? "active" : ""}`}
-                            onClick={() => toggleFilter("badge", b)}
-                          >
-                            <span className="filter-checkbox" />
-                            {renderBadgeVisual(b)} {b}
-                          </div>
-                        ))}
-                    </div>
-                  )}
+                  <div className="filter-group">
+                    <div className="filter-group-title">Validation Profile</div>
+                    {validationTierOptions.map((tier) => (
+                      <div
+                        key={tier.key}
+                        className={`filter-option ${isTierActive(tier) ? "active" : ""}`}
+                        onClick={() => toggleValidationTier(tier)}
+                      >
+                        <span className="filter-checkbox" />
+                        {tier.label}
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </aside>
 
             {/* Vendor List — Netflix Style */}
             <main>
-              <div className="vendors-count">
-                {pagination.total} vendor{pagination.total !== 1 ? "s" : ""}{" "}
-                found
-              </div>
-
               {loading ? (
                 <VendorGridSkeleton count={9} />
               ) : error ? (
@@ -306,6 +382,133 @@ export default function VendorsPage() {
                 </div>
               ) : (
                 <>
+                  {highlightedVendors.length > 0 && (
+                    <section className="marketplace-featured-band fade-in">
+                      <div className="marketplace-featured-header">
+                        <h2>Highlighted Vendors</h2>
+                        <p>
+                          VOE-audited vendors are prioritized here as
+                          marketplace references. Sponsored spots are also
+                          supported.
+                        </p>
+                      </div>
+
+                      <div className="marketplace-featured-row">
+                        {highlightedVendors.map((vendor) => {
+                          const summary = feedbackSummaries[vendor._id] || {
+                            avgRating: 0,
+                            totalRatings: 0,
+                          };
+                          const badgeType = getBadgeType(vendor);
+                          const tierLabel = getValidationTier(badgeType);
+                          const sponsored = isSponsoredVendor(vendor);
+                          return (
+                            <div
+                              className={`netflix-card marketplace-card is-featured ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
+                              key={`featured-${vendor._id}`}
+                              onClick={() =>
+                                navigate(`/vendors/${vendor.slug}`)
+                              }
+                              style={{ background: getCardGradient(badgeType) }}
+                            >
+                              <div className="netflix-card-hero">
+                                {vendor.logo ? (
+                                  <>
+                                    <img
+                                      src={vendor.logo}
+                                      alt={vendor.name}
+                                      className="netflix-card-img"
+                                      loading="lazy"
+                                      decoding="async"
+                                      onError={handleVendorImageError}
+                                    />
+                                    <div
+                                      className="netflix-card-placeholder"
+                                      style={{ display: "none" }}
+                                    >
+                                      <span>{vendor.name.charAt(0)}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="netflix-card-placeholder">
+                                    <span>{vendor.name.charAt(0)}</span>
+                                  </div>
+                                )}
+                                <div className="netflix-card-overlay">
+                                  <span
+                                    className={`voe-badge ${badgeClass(badgeType)}`}
+                                  >
+                                    <span className="voe-badge-icon">
+                                      {renderBadgeVisual(badgeType)}
+                                    </span>
+                                    {getBadgeDisplayLabel(badgeType)}
+                                  </span>
+                                  {sponsored && (
+                                    <span className="vendor-sponsored-tag">
+                                      Sponsored
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="netflix-card-body">
+                                <h3 className="netflix-card-name">
+                                  {vendor.name}
+                                </h3>
+                                <div className="netflix-card-meta">
+                                  <span>
+                                    <FiMapPin size={14} /> {vendor.country}
+                                  </span>
+                                  <span className="vendor-meta-dot" />
+                                  <span>{vendor.size}</span>
+                                </div>
+
+                                <span
+                                  className={`vendor-verification-tier ${getTierClass(badgeType)}`}
+                                >
+                                  {tierLabel}
+                                </span>
+
+                                <div className="netflix-card-footer">
+                                  <div className="netflix-card-score">
+                                    <div className="netflix-score-ring">
+                                      <span className="netflix-score-val">
+                                        {vendor.globalScore?.toFixed(1)}
+                                      </span>
+                                    </div>
+                                    <span className="netflix-score-label">
+                                      Trust
+                                    </span>
+                                  </div>
+                                  <div className="netflix-card-rating">
+                                    {summary.totalRatings > 0 ? (
+                                      <>
+                                        {renderStars(summary.avgRating)}
+                                        <span className="netflix-rating-info">
+                                          {summary.avgRating.toFixed(1)} (
+                                          {summary.totalRatings})
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="netflix-no-reviews">
+                                        No reviews yet
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  <div className="vendors-count">
+                    {pagination.total} vendor{pagination.total !== 1 ? "s" : ""}{" "}
+                    found
+                  </div>
+
                   <div className="netflix-grid">
                     {vendors.map((vendor) => {
                       const summary = feedbackSummaries[vendor._id] || {
@@ -313,9 +516,11 @@ export default function VendorsPage() {
                         totalRatings: 0,
                       };
                       const badgeType = getBadgeType(vendor);
+                      const tierLabel = getValidationTier(badgeType);
+                      const sponsored = isSponsoredVendor(vendor);
                       return (
                         <div
-                          className="netflix-card slide-up"
+                          className={`netflix-card marketplace-card slide-up ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
                           key={vendor._id}
                           onClick={() => navigate(`/vendors/${vendor.slug}`)}
                           id={`vendor-${vendor.slug}`}
@@ -354,8 +559,13 @@ export default function VendorsPage() {
                                 <span className="voe-badge-icon">
                                   {renderBadgeVisual(badgeType)}
                                 </span>
-                                {badgeType}
+                                {getBadgeDisplayLabel(badgeType)}
                               </span>
+                              {sponsored && (
+                                <span className="vendor-sponsored-tag">
+                                  Sponsored
+                                </span>
+                              )}
                             </div>
                           </div>
 
@@ -375,6 +585,12 @@ export default function VendorsPage() {
                                 {vendor.shortDescription}
                               </p>
                             )}
+
+                            <span
+                              className={`vendor-verification-tier ${getTierClass(badgeType)}`}
+                            >
+                              {tierLabel}
+                            </span>
 
                             {vendor.services?.length > 0 && (
                               <div className="netflix-card-services">
@@ -401,7 +617,9 @@ export default function VendorsPage() {
                                     {vendor.globalScore?.toFixed(1)}
                                   </span>
                                 </div>
-                                <span className="netflix-score-label">VOE</span>
+                                <span className="netflix-score-label">
+                                  Trust
+                                </span>
                               </div>
                               <div className="netflix-card-rating">
                                 {summary.totalRatings > 0 ? (

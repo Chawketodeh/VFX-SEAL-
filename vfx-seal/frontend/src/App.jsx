@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
@@ -41,7 +41,9 @@ function ProtectedRoute({
 }
 
 export default function App() {
+  const location = useLocation();
   const { isLoggedIn, isApproved, isAdmin, loading } = useAuth();
+  const hideAnimatedBackground = location.pathname.startsWith("/vendors");
 
   if (loading)
     return (
@@ -56,7 +58,7 @@ export default function App() {
       <ScrollToTop />
 
       {/* Vanta.NET animated background */}
-      <VantaNetBackground />
+      {!hideAnimatedBackground && <VantaNetBackground />}
 
       {/* Show Navbar only when logged in — ContactPage has its own public nav */}
       {isLoggedIn && <Navbar />}
