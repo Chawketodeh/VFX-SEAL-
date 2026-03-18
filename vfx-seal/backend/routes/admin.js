@@ -63,7 +63,6 @@ router.patch("/users/:id/approve", async (req, res) => {
     if (user.role === "ADMIN")
       return res.status(400).json({ message: "Cannot modify admin users" });
 
-    const previousStatus = user.status;
     user.status = "APPROVED";
     await user.save();
 
@@ -73,22 +72,18 @@ router.patch("/users/:id/approve", async (req, res) => {
         firstName: user.name?.split(" ")?.[0],
       });
 
-      return res.json({ message: "User approved successfully", user });
+      return res.json({
+        message: "User approved successfully",
+        user,
+        emailDelivered: true,
+      });
     } catch (emailError) {
       console.error("Approval email send failed:", emailError);
-      try {
-        user.status = previousStatus;
-        await user.save();
-      } catch (rollbackError) {
-        console.error(
-          "Failed to rollback user approval after email error:",
-          rollbackError,
-        );
-      }
-
-      return res.status(500).json({
-        message:
-          "Approval email could not be delivered. The account was not approved.",
+      return res.json({
+        message: "User approved, but approval email could not be delivered.",
+        user,
+        emailDelivered: false,
+        emailError: emailError?.message || "Unknown email error",
       });
     }
   } catch (error) {

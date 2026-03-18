@@ -354,10 +354,18 @@ export default function AdminDashboard() {
   const handleUserAction = async (userId, action) => {
     setActionLoading(`${userId}-${action}`);
     try {
-      await api.patch(`/admin/users/${userId}/${action}`);
+      const { data } = await api.patch(`/admin/users/${userId}/${action}`);
       await fetchData();
+
+      if (
+        data?.message &&
+        action === "approve" &&
+        data.emailDelivered === false
+      ) {
+        alert(data.message);
+      }
     } catch (err) {
-      alert(`Failed to ${action} user`);
+      alert(err.response?.data?.message || `Failed to ${action} user`);
     } finally {
       setActionLoading(null);
     }
