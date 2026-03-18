@@ -48,35 +48,38 @@ export default function HomePage() {
         </div>
         <div className="hero-glow-frame">
           <div className="hero-glow" />
-        </div>
-        <div className="hero-content">
-          <h1 className="hero-title">
-            The <span className="hero-accent">Selective Marketplace</span>
-            <br />
-            for VFX Vendor Discovery.
-          </h1>
-          <p className="hero-subtitle">
-            The Seal gives VFX professionals free access to search, compare, and
-            evaluate vendor profiles with full transparency on what is
-            VOE-audited, self-declared, or not audited.
-          </p>
-          <div className="hero-cta">
-            <Link
-              to={getStartedLink}
-              className="btn btn-primary btn-xl hero-btn"
-            >
-              <span className="hero-btn-glow" />
-              {isLoggedIn ? "Go to Dashboard" : "Join the Club"}
-            </Link>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="seal-logo-container">
-            <img
-              src={sealLogo}
-              alt="VFX Seal Certification"
-              className="seal-logo"
-            />
+          <div className="hero-frame-layout">
+            <div className="hero-content">
+              <h1 className="hero-title">
+                The <span className="hero-accent">Selective Marketplace</span>
+                <br />
+                for VFX Vendor Discovery.
+              </h1>
+              <p className="hero-subtitle">
+                The Seal gives VFX professionals free access to search, compare,
+                and evaluate vendor profiles with full transparency on what is
+                VOE-audited, self-declared, or not audited.
+              </p>
+              <div className="hero-cta">
+                <Link
+                  to={getStartedLink}
+                  className="btn btn-primary btn-xl hero-btn"
+                >
+                  <span className="hero-btn-glow" />
+                  {isLoggedIn ? "Go to Dashboard" : "Join the Club"}
+                </Link>
+              </div>
+            </div>
+
+            <div className="hero-visual">
+              <div className="seal-logo-container">
+                <img
+                  src={sealLogo}
+                  alt="VFX Seal Certification"
+                  className="seal-logo"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

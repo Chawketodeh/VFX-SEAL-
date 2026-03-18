@@ -3364,13 +3364,11 @@ input[type="checkbox"]:checked + .checkmark::after {
 
 /* Hero Glow Frame - Premium container for controlled glow effect */
 .hero-glow-frame {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 1400px;
-  height: 500px;
-  border-radius: 28px;
+  position: relative;
+  width: clamp(280px, 90vw, 1400px);
+  min-height: clamp(280px, 32vw, 500px);
+  height: auto;
+  border-radius: clamp(16px, 2vw, 28px);
   overflow: hidden;
   border: 1px solid rgba(246, 231, 192, 0.12);
   background: var(--bg-card);
@@ -3380,8 +3378,14 @@ input[type="checkbox"]:checked + .checkmark::after {
     inset 0 1px 0 rgba(246, 231, 192, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3),
     0 2px 8px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+  padding: clamp(16px, 3vw, 44px);
+  isolation: isolate;
 }
 
 .hero-glow-frame::before {
@@ -3401,6 +3405,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
+  pointer-events: none;
 }
 
 .hero-glow {
@@ -3408,8 +3413,8 @@ input[type="checkbox"]:checked + .checkmark::after {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 300px;
-  height: 300px;
+  width: clamp(140px, 18vw, 350px);
+  height: clamp(140px, 18vw, 350px);
    background: radial-gradient(circle, 
     rgba(201, 163, 79, 0.15) 0%, 
     rgba(201, 163, 79, 0.08) 40%, 
@@ -3418,6 +3423,20 @@ input[type="checkbox"]:checked + .checkmark::after {
   filter: blur(35px);
   animation: glowMove 12s infinite ease-in-out;
   pointer-events: none;
+  z-index: 0;
+}
+
+.hero-frame-layout {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: clamp(12px, 2vw, 28px);
 }
 
 @keyframes glowMove {
@@ -3439,7 +3458,9 @@ input[type="checkbox"]:checked + .checkmark::after {
   position: relative;
   z-index: 2;
   text-align: center;
-  max-width: 800px;
+  width: min(100%, 900px);
+  max-width: 900px;
+  margin-inline: auto;
 }
 
 .hero-badge {
@@ -3458,12 +3479,13 @@ input[type="checkbox"]:checked + .checkmark::after {
 }
 
 .hero-title {
-  font-size: 3.5rem;
+  font-size: clamp(1.85rem, 4.4vw, 3.5rem);
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.03em;
   margin-bottom: var(--space-lg);
   animation: slideUp 0.7s ease-out;
+  overflow-wrap: anywhere;
 }
 
 .hero-accent {
@@ -3477,7 +3499,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   font-size: 1.15rem;
   color: var(--text-secondary);
   line-height: 1.7;
-  max-width: 640px;
+  max-width: 760px;
   margin: 0 auto var(--space-xl);
   animation: slideUp 0.8s ease-out;
 }
@@ -3487,7 +3509,7 @@ input[type="checkbox"]:checked + .checkmark::after {
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  margin-bottom: var(--space-3xl);
+  margin-bottom: 0;
   animation: slideUp 0.9s ease-out;
 }
 
@@ -3557,7 +3579,11 @@ input[type="checkbox"]:checked + .checkmark::after {
 
 /* Hero Gateway - Exclusive Seal Effect */
 .hero-visual {
-  display: none; /* Hidden on smaller viewports; shown on wide screens */
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: clamp(8px, 2vw, 20px);
 }
 
 .seal-gateway {
@@ -3661,7 +3687,7 @@ input[type="checkbox"]:checked + .checkmark::after {
 }
 
 .seal-logo {
-  width: 280px;
+  width: clamp(120px, 24vw, 350px);
   height: auto;
   filter: drop-shadow(0 15px 35px rgba(0,0,0,0.5));
   transition: all var(--transition-slow);
@@ -4497,7 +4523,7 @@ input[type="checkbox"]:checked + .checkmark::after {
 }
 
 .seal-logo {
-  width: 350px;
+  width: clamp(120px, 24vw, 350px);
   height: auto;
   filter: drop-shadow(0 10px 25px rgba(0,0,0,0.4));
 }
@@ -5325,6 +5351,12 @@ input[type="checkbox"]:checked + .checkmark::after {
     text-align: left;
   }
 
+  .hero-frame-layout {
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.8fr);
+    justify-items: stretch;
+    gap: clamp(20px, 2.4vw, 40px);
+  }
+
   .hero-cta {
     justify-content: flex-start;
   }
@@ -5334,9 +5366,11 @@ input[type="checkbox"]:checked + .checkmark::after {
   }
 
   .hero-visual {
-    display: block;
+    display: flex;
     position: relative;
     z-index: 2;
+    align-self: center;
+    margin-top: 0;
   }
 
   /* Enhanced vendor showcase for large screens */
@@ -5369,17 +5403,7 @@ input[type="checkbox"]:checked + .checkmark::after {
     gap: var(--space-lg);
   }
 
-  /* Adjust glow frame for tablets */
-  .hero-glow-frame {
-    width: 440px;
-    height: 280px;
-    border-radius: 24px;
-  }
-  
-  .hero-glow {
-    width: 260px;
-    height: 260px;
-  }
+  /* Glow frame automatically scales with clamp - no overrides needed */
 }
 
 @media (max-width: 768px) {
@@ -5417,18 +5441,7 @@ input[type="checkbox"]:checked + .checkmark::after {
     height: 1px;
   }
 
-  /* Optimize glow frame for mobile */
-  .hero-glow-frame {
-    width: 320px;
-    height: 240px;
-    border-radius: 20px;
-  }
-  
-  .hero-glow {
-    width: 250px;
-    height: 250px;
-    filter: blur(30px);
-  }
+  /* Glow frame automatically scales with clamp - no overrides needed */
 
   /* Vendor showcase mobile optimization */
   .vendor-showcase-grid {
