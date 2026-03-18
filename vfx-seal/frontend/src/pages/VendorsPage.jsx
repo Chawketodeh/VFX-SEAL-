@@ -100,6 +100,26 @@ export default function VendorsPage() {
     featuredRowRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
+  const openVendorDetail = (vendor) => {
+    if (!vendor?.slug) return;
+
+    try {
+      const cacheKey = "vendor_snapshot_cache";
+      const existing = JSON.parse(sessionStorage.getItem(cacheKey) || "{}");
+      existing[vendor.slug] = {
+        ...vendor,
+        _cachedAt: Date.now(),
+      };
+      sessionStorage.setItem(cacheKey, JSON.stringify(existing));
+    } catch (e) {
+      // Ignore cache errors and proceed with navigation.
+    }
+
+    navigate(`/vendors/${vendor.slug}`, {
+      state: { vendorSnapshot: vendor },
+    });
+  };
+
   const normalizeBadgeType = (badge) => {
     const raw = String(badge || "")
       .trim()
@@ -406,9 +426,7 @@ export default function VendorsPage() {
                             <div
                               className={`netflix-card marketplace-card is-featured ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
                               key={`featured-${vendor._id}`}
-                              onClick={() =>
-                                navigate(`/vendors/${vendor.slug}`)
-                              }
+                              onClick={() => openVendorDetail(vendor)}
                               style={{ background: getCardGradient(badgeType) }}
                             >
                               <div className="netflix-card-hero">
@@ -522,7 +540,7 @@ export default function VendorsPage() {
                         <div
                           className={`netflix-card marketplace-card slide-up ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
                           key={vendor._id}
-                          onClick={() => navigate(`/vendors/${vendor.slug}`)}
+                          onClick={() => openVendorDetail(vendor)}
                           id={`vendor-${vendor.slug}`}
                           style={{
                             background: getCardGradient(badgeType),

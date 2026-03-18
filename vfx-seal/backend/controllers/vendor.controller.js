@@ -10,6 +10,17 @@
 
 const { getVendors } = require("../services/odooService");
 
+const normalizeSlug = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
 /**
  * GET /api/odoo/vendors[?filtersOnly=true&search=&country=&size=&badge=&page=1&limit=20]
  *
@@ -110,6 +121,37 @@ exports.getVendorsFromOdoo = async (req, res) => {
   } catch (error) {
     console.error("[Odoo] getVendorsFromOdoo failed:", error.message);
 
+    return res.status(503).json({
+      success: false,
+      message: "Vendor service temporarily unavailable",
+    });
+  }
+};
+
+/**
+ * GET /api/odoo/vendors/:slug
+ *
+ * Returns one vendor from Odoo feed by slug.
+ */
+exports.getVendorBySlugFromOdoo = async (req, res) => {
+  try {
+    const slug = normalizeSlug(req.params.slug);
+    if (!slug) {
+      return res.status(400).json({ message: "Invalid vendor slug" });
+    }
+
+    const allVendors = await getVendors();
+    const vendor =
+      allVendors.find((item) => normalizeSlug(item.slug) === slug) ||
+      allVendors.find((item) => normalizeSlug(item.name) === slug);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    return res.json({ vendor });
+  } catch (error) {
+    console.error("[Odoo] getVendorBySlugFromOdoo failed:", error.message);
     return res.status(503).json({
       success: false,
       message: "Vendor service temporarily unavailable",

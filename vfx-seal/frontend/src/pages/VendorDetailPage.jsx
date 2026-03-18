@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 import FeedbackSection from "../components/FeedbackSection";
@@ -25,8 +25,127 @@ const BADGE_ICONS = {
   None: "—",
 };
 
+const VENDOR_SNAPSHOT_CACHE_KEY = "vendor_snapshot_cache";
+
+const DEFAULT_ASSESSMENT_SECTION_NAMES = [
+  "Governance & Legal",
+  "Finance & Stability",
+  "Production Capability",
+  "Pipeline & Technology",
+  "Security & Compliance",
+  "Quality Assurance",
+  "Delivery & Operations",
+  "Team & Talent",
+  "Communication & Collaboration",
+  "Business Continuity",
+  "Innovation & R&D",
+];
+
+const normalizeSlug = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+const ensureArray = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value) return [];
+  return String(value)
+    .split(/[,;/]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const getVendorSnapshotBySlug = (slug) => {
+  try {
+    const cache = JSON.parse(
+      sessionStorage.getItem(VENDOR_SNAPSHOT_CACHE_KEY) || "{}",
+    );
+
+    if (cache[slug]) return cache[slug];
+
+    const normalized = normalizeSlug(slug);
+    const matchedKey = Object.keys(cache).find(
+      (key) => normalizeSlug(key) === normalized,
+    );
+    return matchedKey ? cache[matchedKey] : null;
+  } catch {
+    return null;
+  }
+};
+
+const buildFallbackAssessment = (vendor) => {
+  const declaredSkills = ensureArray(vendor?.services);
+  const declaredPrimary = declaredSkills.slice(0, 3);
+  const declaredSecondary = declaredSkills.slice(3);
+  const baseScore = Number(vendor?.globalScore) || 0;
+
+  return DEFAULT_ASSESSMENT_SECTION_NAMES.map((sectionName, index) => ({
+    sectionName,
+    score: Number(baseScore.toFixed(1)),
+    validatedSkills: index === 0 ? declaredPrimary : [],
+    unverifiedSkills: index === 0 ? declaredSecondary : [],
+    nonValidatedSkills: ["Pending VOE validation"],
+  }));
+};
+
+const normalizeVendorProfile = (rawVendor) => {
+  if (!rawVendor) return null;
+
+  const assessment = Array.isArray(rawVendor.assessment)
+    ? rawVendor.assessment
+    : [];
+
+  const normalizedAssessment =
+    assessment.length > 0
+      ? assessment.map((section, index) => ({
+          sectionName:
+            section?.sectionName ||
+            DEFAULT_ASSESSMENT_SECTION_NAMES[index] ||
+            `Section ${index + 1}`,
+          score: Number(section?.score ?? rawVendor.globalScore ?? 0),
+          validatedSkills: ensureArray(section?.validatedSkills),
+          unverifiedSkills: ensureArray(section?.unverifiedSkills),
+          nonValidatedSkills: ensureArray(section?.nonValidatedSkills),
+        }))
+      : buildFallbackAssessment(rawVendor);
+
+  if (normalizedAssessment.length < 11) {
+    const missingSections = DEFAULT_ASSESSMENT_SECTION_NAMES.slice(
+      normalizedAssessment.length,
+      11,
+    ).map((sectionName) => ({
+      sectionName,
+      score: Number(rawVendor.globalScore ?? 0),
+      validatedSkills: [],
+      unverifiedSkills: [],
+      nonValidatedSkills: ["Pending VOE validation"],
+    }));
+    normalizedAssessment.push(...missingSections);
+  }
+
+  return {
+    ...rawVendor,
+    slug: rawVendor.slug || normalizeSlug(rawVendor.name),
+    name: rawVendor.name || "Unknown Vendor",
+    country: rawVendor.country || "Not specified",
+    size: rawVendor.size || "Not specified",
+    globalScore: Number(rawVendor.globalScore ?? 0),
+    badgeVOE: rawVendor.badgeVOE || "None",
+    services: ensureArray(rawVendor.services),
+    assessment: normalizedAssessment.slice(0, 11),
+    pdfReport: rawVendor.pdfReport || null,
+  };
+};
+
 export default function VendorDetailPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const { user, isApproved } = useAuth();
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,28 +174,80 @@ export default function VendorDetailPage() {
   const badgeClass = (badge) => (badge || "none").toLowerCase();
 
   useEffect(() => {
+    const stateSnapshot = location.state?.vendorSnapshot || null;
+    const cachedSnapshot = stateSnapshot || getVendorSnapshotBySlug(slug);
+
+    if (cachedSnapshot) {
+      const normalized = normalizeVendorProfile(cachedSnapshot);
+      setVendor(normalized);
+      if (normalized?.assessment?.length > 0) {
+        setOpenSections({ 0: true });
+      }
+      setLoading(false);
+    }
+
     const fetchVendor = async () => {
       try {
-        const { data } = await api.get(`/vendors/${slug}`);
-        setVendor(data.vendor);
-        if (data.vendor.assessment?.length > 0) {
+        let vendorData = null;
+
+        try {
+          const { data } = await api.get(`/vendors/${slug}`);
+          vendorData = data.vendor;
+        } catch (legacyErr) {
+          if (legacyErr?.response?.status !== 404) {
+            throw legacyErr;
+          }
+
+          const { data } = await api.get(`/odoo/vendors/${slug}`);
+          vendorData = data.vendor;
+        }
+
+        if (!vendorData) {
+          const { data } = await api.get("/odoo/vendors", {
+            params: {
+              search: String(slug || "").replace(/-/g, " "),
+              page: 1,
+              limit: 100,
+            },
+          });
+
+          const matches = data?.vendors || [];
+          const normalizedSlug = normalizeSlug(slug);
+          vendorData =
+            matches.find(
+              (item) =>
+                normalizeSlug(item.slug) === normalizedSlug ||
+                normalizeSlug(item.name) === normalizedSlug,
+            ) || null;
+        }
+
+        if (!vendorData) {
+          throw new Error("Vendor not found");
+        }
+
+        const normalized = normalizeVendorProfile(vendorData);
+        setVendor(normalized);
+        setError("");
+        if (normalized?.assessment?.length > 0) {
           setOpenSections({ 0: true });
         }
       } catch (err) {
-        setError(err.response?.data?.message || "Vendor not found");
+        if (!cachedSnapshot) {
+          setError(err.response?.data?.message || "Vendor not found");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchVendor();
-  }, [slug]);
+  }, [slug, location.state]);
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   const expandAll = () => {
-    if (!vendor.assessment) return;
+    if (!vendor?.assessment) return;
     const allOpen = {};
     vendor.assessment.forEach((_, idx) => {
       allOpen[idx] = true;
@@ -123,7 +294,12 @@ export default function VendorDetailPage() {
     // Could add a toast notification here or update UI state
   };
 
-  const scorePercent = vendor ? (vendor.globalScore / 10) * 100 : 0;
+  const scorePercent = vendor
+    ? (Number(vendor.globalScore || 0) / 10) * 100
+    : 0;
+  const canAccessPdf =
+    Boolean(vendor?.pdfReport?.filePath) &&
+    (vendor?.pdfReport?.visibility !== "private" || user?.role === "ADMIN");
 
   if (loading)
     return (
@@ -243,7 +419,16 @@ export default function VendorDetailPage() {
             </div>
 
             {/* Feedback & Rating Section — Collapsible Accordion */}
-            <FeedbackSection vendorId={vendor._id} vendorName={vendor.name} />
+            {String(vendor._id || "").startsWith("odoo_") ? (
+              <div
+                className="messages-empty"
+                style={{ marginBottom: "var(--space-lg)" }}
+              >
+                Ratings & reviews are not available yet for this profile source.
+              </div>
+            ) : (
+              <FeedbackSection vendorId={vendor._id} vendorName={vendor.name} />
+            )}
 
             {/* Assessment Sections */}
             {vendor.assessment?.length > 0 && (
@@ -404,13 +589,19 @@ export default function VendorDetailPage() {
                   <h4>📄 VOE Assessment Report</h4>
                   <p>Full detailed report for {vendor.name}</p>
                 </div>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleDownloadPdf}
-                  id="download-pdf-btn"
-                >
-                  📥 View / Download PDF
-                </button>
+                {canAccessPdf ? (
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleDownloadPdf}
+                    id="download-pdf-btn"
+                  >
+                    📥 View / Download PDF
+                  </button>
+                ) : (
+                  <span className="status-badge closed">
+                    Report not authorized
+                  </span>
+                )}
               </div>
             )}
           </div>
