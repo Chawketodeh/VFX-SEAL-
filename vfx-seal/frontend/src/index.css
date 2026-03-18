@@ -466,6 +466,7 @@ h4 { font-size: 1.125rem; }
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
+  caret-color: var(--accent);
   font-family: var(--font-family);
   font-size: 0.9rem;
   transition: all var(--transition-fast);
