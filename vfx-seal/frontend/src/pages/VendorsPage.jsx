@@ -405,7 +405,15 @@ export default function VendorsPage() {
                   {highlightedVendors.length > 0 && (
                     <section className="marketplace-featured-band fade-in">
                       <div className="marketplace-featured-header">
-                        <h2>VOE audited</h2>
+                        <h2>
+                          <FiStar size={16} style={{ marginRight: 8 }} />
+                          VOE audited Vendors
+                        </h2>
+                        <p>
+                          VOE-audited vendors are prioritized here as reference
+                          profiles. Sponsored placements ("Support The Seal")
+                          can also appear in this band.
+                        </p>
                       </div>
 
                       <div className="marketplace-featured-row">
@@ -516,6 +524,14 @@ export default function VendorsPage() {
                       </div>
                     </section>
                   )}
+
+                  <div className="marketplace-list-header">
+                    <h2>Full Marketplace</h2>
+                    <p>
+                      All vendors are listed below with clear verification
+                      levels: VOE-audited, self-assessed, and non-audited.
+                    </p>
+                  </div>
 
                   <div className="vendors-count">
                     {pagination.total} vendor{pagination.total !== 1 ? "s" : ""}{" "}
