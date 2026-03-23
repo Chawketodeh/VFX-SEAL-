@@ -66,26 +66,25 @@ router.patch("/users/:id/approve", async (req, res) => {
     user.status = "APPROVED";
     await user.save();
 
-    try {
-      await sendApprovalEmail({
-        email: user.email,
-        firstName: user.name?.split(" ")?.[0],
+    // Send email in background so approval response is not blocked by SMTP latency.
+    sendApprovalEmail({
+      email: user.email,
+      firstName: user.name?.split(" ")?.[0],
+    })
+      .then(() => {
+        console.log(
+          `[Admin] Approval email queued successfully for ${user.email}`,
+        );
+      })
+      .catch((emailError) => {
+        console.error("Approval email send failed:", emailError);
       });
 
-      return res.json({
-        message: "User approved successfully",
-        user,
-        emailDelivered: true,
-      });
-    } catch (emailError) {
-      console.error("Approval email send failed:", emailError);
-      return res.json({
-        message: "User approved, but approval email could not be delivered.",
-        user,
-        emailDelivered: false,
-        emailError: emailError?.message || "Unknown email error",
-      });
-    }
+    return res.json({
+      message: "User approved successfully",
+      user,
+      emailQueued: true,
+    });
   } catch (error) {
     console.error("Approve user error:", error);
     res.status(500).json({ message: "Server error" });

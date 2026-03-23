@@ -65,20 +65,17 @@ router.post("/register", async (req, res) => {
       status: "PENDING",
     });
 
-    // Notify admin that a new account is pending review
-    try {
-      await sendNewRegistrationNotificationEmail({
-        adminEmail:
-          process.env.ADMIN_NOTIFICATION_EMAIL || process.env.EMAIL_USER,
-        user,
-      });
-    } catch (emailError) {
+    // Notify admin in background so registration response is not blocked by SMTP latency.
+    sendNewRegistrationNotificationEmail({
+      adminEmail:
+        process.env.ADMIN_NOTIFICATION_EMAIL || process.env.EMAIL_USER,
+      user,
+    }).catch((emailError) => {
       console.error(
         "Failed to send admin registration notification:",
         emailError,
       );
-      // Continue successful registration even if email delivery fails.
-    }
+    });
 
     res.status(201).json({
       message:
