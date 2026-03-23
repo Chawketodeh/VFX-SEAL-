@@ -67,6 +67,11 @@ export default function AdminDashboard() {
   const [vendorPage, setVendorPage] = useState(1);
   const [feedbackPage, setFeedbackPage] = useState(1);
   const [messagePage, setMessagePage] = useState(1);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
+  const [confirmBlockUser, setConfirmBlockUser] = useState(null);
+  const [confirmEditUser, setConfirmEditUser] = useState(null);
+  const [confirmDeleteVendor, setConfirmDeleteVendor] = useState(null);
 
   const getMessagesEndpoint = () => {
     const params = messageFilter ? `?status=${messageFilter}` : "";
@@ -352,6 +357,17 @@ export default function AdminDashboard() {
   }, [activeTab, composeOpen, recipientSearch]);
 
   const handleUserAction = async (userId, action) => {
+    // Show confirmation for block action
+    if (action === "block") {
+      setConfirmBlockUser(userId);
+      return;
+    }
+
+    // Execute immediately for other actions
+    await executeUserAction(userId, action);
+  };
+
+  const executeUserAction = async (userId, action) => {
     setActionLoading(`${userId}-${action}`);
     try {
       const { data } = await api.patch(`/admin/users/${userId}/${action}`);
@@ -372,21 +388,32 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteVendor = async (vendorId) => {
-    if (!window.confirm("Are you sure you want to delete this vendor?")) return;
+    setConfirmDeleteVendor(vendorId);
+  };
+
+  const executeDeleteVendor = async (vendorId) => {
+    setActionLoading(`${vendorId}-delete`);
     try {
       await api.delete(`/vendors/${vendorId}`);
       await fetchData();
+      setConfirmDeleteVendor(null);
     } catch (err) {
       alert("Failed to delete vendor");
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this studio?")) return;
+    setConfirmDeleteUser(userId);
+  };
+
+  const executeDeleteUser = async (userId) => {
     setActionLoading(`${userId}-delete`);
     try {
       await api.delete(`/admin/users/${userId}/delete`);
       await fetchData();
+      setConfirmDeleteUser(null);
     } catch (err) {
       alert("Failed to delete studio");
     } finally {
@@ -395,8 +422,13 @@ export default function AdminDashboard() {
   };
 
   const handleEditStudio = (studio) => {
+    setConfirmEditUser(studio);
+  };
+
+  const executeEditStudio = (studio) => {
     setSelectedStudio(studio);
     setEditStudioModalOpen(true);
+    setConfirmEditUser(null);
   };
 
   const handleStudioUpdate = (updatedStudio) => {
@@ -1877,6 +1909,81 @@ export default function AdminDashboard() {
           setDeleteMessageTarget(null);
         }}
         onConfirm={confirmDeleteMessage}
+      />
+
+      {/* Confirm Block User Modal */}
+      <ConfirmModal
+        isOpen={confirmBlockUser !== null}
+        title="Block Studio"
+        message="Are you sure you want to block this studio? They will not be able to access their account or post new content."
+        cancelLabel="Cancel"
+        confirmLabel="Block"
+        isDangerous={true}
+        loading={
+          confirmBlockUser && actionLoading === `${confirmBlockUser}-block`
+        }
+        onCancel={() => setConfirmBlockUser(null)}
+        onConfirm={async () => {
+          if (confirmBlockUser) {
+            await executeUserAction(confirmBlockUser, "block");
+            setConfirmBlockUser(null);
+          }
+        }}
+      />
+
+      {/* Confirm Delete User Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteUser !== null}
+        title="Delete Studio"
+        message="Are you sure you want to permanently delete this studio account? This action cannot be undone and all associated data will be removed."
+        cancelLabel="Cancel"
+        confirmLabel="Delete Studio"
+        isDangerous={true}
+        loading={
+          confirmDeleteUser && actionLoading === `${confirmDeleteUser}-delete`
+        }
+        onCancel={() => setConfirmDeleteUser(null)}
+        onConfirm={async () => {
+          if (confirmDeleteUser) {
+            await executeDeleteUser(confirmDeleteUser);
+          }
+        }}
+      />
+
+      {/* Confirm Edit User Modal */}
+      <ConfirmModal
+        isOpen={confirmEditUser !== null}
+        title="Edit Studio Profile"
+        message="You are about to edit this studio's profile. All changes will be saved immediately."
+        cancelLabel="Cancel"
+        confirmLabel="Edit"
+        isDangerous={false}
+        onCancel={() => setConfirmEditUser(null)}
+        onConfirm={() => {
+          if (confirmEditUser) {
+            executeEditStudio(confirmEditUser);
+          }
+        }}
+      />
+
+      {/* Confirm Delete Vendor Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteVendor !== null}
+        title="Delete Vendor"
+        message="Are you sure you want to permanently delete this vendor? This action cannot be undone."
+        cancelLabel="Cancel"
+        confirmLabel="Delete Vendor"
+        isDangerous={true}
+        loading={
+          confirmDeleteVendor &&
+          actionLoading === `${confirmDeleteVendor}-delete`
+        }
+        onCancel={() => setConfirmDeleteVendor(null)}
+        onConfirm={async () => {
+          if (confirmDeleteVendor) {
+            await executeDeleteVendor(confirmDeleteVendor);
+          }
+        }}
       />
     </div>
   );
