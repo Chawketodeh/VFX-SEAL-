@@ -96,17 +96,12 @@ export default function ContactPage() {
             </h1>
             <p>
               Have a question or want to learn more about VFX Seal? We'd love to
-              hear from you.
+              hear from you. Our team will get back to you within 24 hours.
             </p>
           </div>
+          <br />
 
           <div className="contact-form-card fade-in">
-            <h2>Send us a message</h2>
-            <p className="contact-form-subtitle">
-              Fill out the form and our team will get back to you within 24
-              hours.
-            </p>
-
             {success ? (
               <div className="contact-success">
                 <div className="contact-success-icon"></div>
