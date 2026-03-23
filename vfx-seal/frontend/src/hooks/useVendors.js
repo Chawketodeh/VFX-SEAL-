@@ -62,6 +62,7 @@ export const useVendors = () => {
   // Memoized parameters for API calls
   const fetchParams = useMemo(
     () => ({
+      eligibility: "strict-vendor-v2",
       search: debouncedSearchTerm,
       country: activeFilters.country.join(","),
       size: activeFilters.size.join(","),

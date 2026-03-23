@@ -37,10 +37,13 @@ exports.getVendorsFromOdoo = async (req, res) => {
       page = 1,
       limit = 20,
       filtersOnly,
+      noCache,
     } = req.query;
 
     // --- 1. Fetch all vendors from Odoo (live, no DB cache) ---
-    const allVendors = await getVendors();
+    const allVendors = await getVendors({
+      bypassCache: String(noCache).toLowerCase() === "true",
+    });
 
     // --- 2. Derive filter options from the actual fetched data ---
     const countries = [

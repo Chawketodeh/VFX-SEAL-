@@ -196,6 +196,7 @@ const DESIRED_FIELDS = [
   "country_id",
   "city",
   "image_128", // lightweight thumbnail for card rendering
+  "x_studio_account_1",
   "x_studio_team",
   "x_studio_fondation",
   "x_studio_service",
@@ -334,6 +335,53 @@ function mapRecord(record) {
   };
 }
 
+function odooFieldText(value) {
+  if (value === false || value == null) return "";
+
+  if (Array.isArray(value)) {
+    // Many2one often arrives as [id, label]
+    if (value.length === 2 && typeof value[1] === "string") {
+      return value[1].trim();
+    }
+
+    return value
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return String(value).trim();
+}
+
+function isEligibleVendorRecord(record) {
+  const accountRaw = odooFieldText(record.x_studio_account_1).toLowerCase();
+  const serviceRaw = odooFieldText(record.x_studio_service).toLowerCase();
+
+  const normalizeToken = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
+  const accountNormalized = normalizeToken(accountRaw);
+
+  // Strict business rule: account must be only "2-Account".
+  // Odoo selection fields may arrive as the key (e.g. "3") or as the label ("2-Account").
+  const accountOk =
+    accountNormalized === "2account" || accountNormalized === "3";
+
+  const serviceTokens = serviceRaw
+    .split(/[,;/|]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  const serviceOk =
+    serviceRaw === "vendor" ||
+    serviceTokens.includes("vendor") ||
+    serviceRaw.includes("vendor");
+
+  return accountOk && serviceOk;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -341,17 +389,24 @@ function mapRecord(record) {
 /**
  * Fetch all published vendors from Odoo res.partner.
  * Filters applied on Odoo side:
+ *   - x_studio_account_1 = "2-Account"
  *   - x_studio_service ilike "Vendor"
  *
- * If either filter field is missing from the schema, that filter is skipped
- * gracefully and a warning is logged.
+ * Both conditions are required together (logical AND).
+ * If a required field is missing from schema, returns an empty list to avoid
+ * showing non-vendor/non-studio accounts.
  *
  * @returns {Promise<object[]>}  Array of mapped vendor objects.
  */
-async function getVendors() {
+async function getVendors(options = {}) {
+  const { bypassCache = false } = options;
   const { ODOO_DB, ODOO_API_KEY } = process.env;
 
-  if (vendorsCache.vendors && Date.now() - vendorsCache.at < VENDORS_CACHE_MS) {
+  if (
+    !bypassCache &&
+    vendorsCache.vendors &&
+    Date.now() - vendorsCache.at < VENDORS_CACHE_MS
+  ) {
     return vendorsCache.vendors;
   }
 
@@ -365,16 +420,30 @@ async function getVendors() {
 
     const fields = await resolveAvailableFields(ODOO_DB, uid, ODOO_API_KEY);
 
-    // Build domain safely.
+    // Build domain with strict eligibility rules.
     // x_studio_published is intentionally not used unless explicitly confirmed.
     const domain = [];
-    if (fields.includes("x_studio_service")) {
-      domain.push(["x_studio_service", "ilike", "Vendor"]);
-    } else {
+    const hasServiceField = fields.includes("x_studio_service");
+    const hasAccountField = fields.includes("x_studio_account_1");
+
+    if (!hasServiceField || !hasAccountField) {
+      const missing = [
+        !hasServiceField ? "x_studio_service" : null,
+        !hasAccountField ? "x_studio_account_1" : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
       console.warn(
-        "[Odoo] x_studio_service not found — fetching without service filter",
+        `[Odoo] Required vendor eligibility field(s) missing: ${missing}. Returning 0 vendors.`,
       );
+      return [];
     }
+
+    // Keep query compatible with Odoo selection key storage and apply strict local check.
+    // In many Odoo databases, selection value for "2-Account" is stored as key "3".
+    domain.push(["x_studio_account_1", "=", "3"]);
+    domain.push(["x_studio_service", "=", "Vendor"]);
 
     console.log(
       `[Odoo] Querying res.partner with domain: ${JSON.stringify(domain)}`,
@@ -408,7 +477,14 @@ async function getVendors() {
   try {
     const records = await fetchOnce();
     console.log(`[Odoo] Fetched ${records.length} vendor record(s).`);
-    const mapped = records.map(mapRecord);
+
+    // Authoritative guard: keep only records that match BOTH eligibility labels.
+    const eligibleRecords = records.filter(isEligibleVendorRecord);
+    console.log(
+      `[Odoo] Eligible vendor records after strict local filter: ${eligibleRecords.length}/${records.length}.`,
+    );
+
+    const mapped = eligibleRecords.map(mapRecord);
     vendorsCache = { vendors: mapped, at: Date.now() };
     return mapped;
   } catch (error) {
@@ -434,7 +510,13 @@ async function getVendors() {
     console.log(
       `[Odoo] Fetched ${records.length} vendor record(s) after retry.`,
     );
-    const mapped = records.map(mapRecord);
+
+    const eligibleRecords = records.filter(isEligibleVendorRecord);
+    console.log(
+      `[Odoo] Eligible vendor records after retry strict local filter: ${eligibleRecords.length}/${records.length}.`,
+    );
+
+    const mapped = eligibleRecords.map(mapRecord);
     vendorsCache = { vendors: mapped, at: Date.now() };
     return mapped;
   }
