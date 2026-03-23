@@ -1,34 +1,39 @@
 /* ============================================
-   VFX Seal Ù?¤ Premium Design System
+   VFX Seal ï¿½?ï¿½ Premium Design System
    ============================================ */
 
 /* ---------- CSS Custom Properties ---------- */
 :root {
   /* Background */
-  --bg-primary: #0E121A;  /* Updated to match brand spec */
-  --bg-secondary: #0c1120;
-  --bg-card: #111827;
-  --bg-card-hover: #162036;
-  --bg-input: #0f1629;
-  --bg-overlay: rgba(14, 18, 26, 0.85);
+  --bg-primary: #0b0f17;
+  --bg-secondary: #141c2a;
+  --bg-card: #1b2433;
+  --bg-card-hover: #232f42;
+  --bg-input: #121a28;
+  --bg-overlay: rgba(11, 15, 23, 0.86);
 
   /* Surface / Glass */
-  --glass-bg: rgba(17, 24, 39, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  --glass-bg: rgba(24, 33, 47, 0.72);
+  --glass-border: rgba(127, 147, 174, 0.22);
+  --glass-border-hover: rgba(167, 186, 209, 0.36);
 
   /* Text */
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-accent: #F6E7C0;  /* Updated to Gold High */
+  --text-secondary: #aab8cc;
+  --text-muted: #8093ad;
+  --text-accent: #f4d38a;
 
   /* Accent / Brand - Updated to match spec */
-  --accent: #F6E7C0;       /* Gold High */
-  --accent-hover: #C79E68; /* Gold Mid */
-  --accent-muted: rgba(246, 231, 192, 0.15);
-  --accent-glow: rgba(199, 158, 104, 0.3);
-  --accent-blue: #1F3141;  /* Blue accent */
+  --accent: #f4d38a;
+  --accent-hover: #ddb162;
+  --accent-muted: rgba(244, 211, 138, 0.16);
+  --accent-glow: rgba(221, 177, 98, 0.26);
+  --accent-blue: #2f435b;
+
+  /* Secondary Structure (30%) */
+  --secondary: #7f93ae;
+  --secondary-muted: rgba(127, 147, 174, 0.2);
+  --secondary-soft: rgba(127, 147, 174, 0.12);
 
   /* Badge Colors */
   --badge-gold: #FFD700;
@@ -81,7 +86,7 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px var(--accent-glow);
-  --shadow-premium: 0 10px 30px rgba(199, 158, 104, 0.2);
+  --shadow-premium: 0 10px 30px rgba(127, 147, 174, 0.22);
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
