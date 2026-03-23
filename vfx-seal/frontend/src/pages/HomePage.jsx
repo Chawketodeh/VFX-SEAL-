@@ -278,7 +278,8 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
+      <br />
+      <br />
       {/* Assessor Network Section */}
       <AssessorsSection />
 
