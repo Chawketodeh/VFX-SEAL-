@@ -112,7 +112,30 @@ const syncVendorsFromOdoo = async ({ bypassOdooCache = true } = {}) => {
     const startedAt = Date.now();
     console.log("[VendorSync] Starting Odoo -> Mongo sync...");
 
-    const vendorsFromOdoo = await getVendors({ bypassCache: bypassOdooCache });
+    let vendorsFromOdoo;
+    try {
+      vendorsFromOdoo = await getVendors({ bypassCache: bypassOdooCache });
+    } catch (odooError) {
+      console.error("[VendorSync] Odoo fetch failed:", odooError.message);
+
+      // Don't fail if cache exists - use stale cache instead of breaking API
+      const state = await getCacheState();
+      if (state.count > 0) {
+        console.warn(
+          "[VendorSync] Odoo down but cache exists, using stale cache",
+        );
+        return {
+          upserted: 0,
+          removed: 0,
+          durationMs: Date.now() - startedAt,
+          usedStaleCache: true,
+          message: "Using stale vendor cache due to Odoo unavailability",
+        };
+      }
+
+      // No cache exists and Odoo failed - propagate error
+      throw odooError;
+    }
 
     const valid = vendorsFromOdoo
       .filter((v) => Number.isFinite(Number(v?.odooId)) && Number(v.odooId) > 0)
@@ -175,11 +198,26 @@ const triggerBackgroundSync = () => {
 const ensureVendorCacheWarm = async () => {
   const state = await getCacheState();
 
-  if (state.count === 0) {
-    await syncVendorsFromOdoo({ bypassOdooCache: true });
+  // Cache is warm and not stale - just return
+  if (state.count > 0 && !state.stale) {
     return;
   }
 
+  // Cache is empty - must sync (blocking call)
+  if (state.count === 0) {
+    const result = await syncVendorsFromOdoo({ bypassOdooCache: true });
+
+    // Even if stale cache was used, check if we got any data
+    const afterSync = await getCacheState();
+    if (afterSync.count === 0) {
+      throw new Error(
+        "Failed to populate vendor cache: Odoo unavailable and no cached data",
+      );
+    }
+    return;
+  }
+
+  // Cache is stale but exists - trigger background sync (non-blocking)
   if (state.stale) {
     triggerBackgroundSync();
   }

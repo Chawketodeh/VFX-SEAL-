@@ -138,18 +138,39 @@ server.listen(PORT, () => {
   console.log(`🚀 VFX Seal API running on port ${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   Socket.io: enabled`);
+  console.log(
+    `   Vendor sync: enabled (interval: ${Number(process.env.VENDOR_SYNC_INTERVAL_MS || 15 * 60 * 1000) / 1000}s)`,
+  );
 
   // Warm Odoo vendor cache in background so user requests read from Mongo quickly.
-  syncVendorsFromOdoo({ bypassOdooCache: true }).catch((error) => {
-    console.error("[VendorSync] Startup sync failed:", error.message);
-  });
+  // This is non-blocking - server will listen even if sync fails or takes time
+  syncVendorsFromOdoo({ bypassOdooCache: true })
+    .then((result) => {
+      console.log("[VendorSync] Startup sync successful:", result);
+    })
+    .catch((error) => {
+      console.error("[VendorSync] Startup sync failed:", error.message);
+      console.error(
+        "[VendorSync] API will use stale cache if available, or return 503 for vendor endpoints",
+      );
+    });
 
   const syncIntervalMs = Number(
     process.env.VENDOR_SYNC_INTERVAL_MS || 15 * 60 * 1000,
   );
   setInterval(() => {
-    syncVendorsFromOdoo({ bypassOdooCache: true }).catch((error) => {
-      console.error("[VendorSync] Scheduled sync failed:", error.message);
-    });
+    syncVendorsFromOdoo({ bypassOdooCache: true })
+      .then((result) => {
+        if (result.usedStaleCache) {
+          console.warn("[VendorSync] Using stale cache:", result.message);
+        } else {
+          console.log(
+            `[VendorSync] Scheduled sync complete: ${result.upserted} upserted, ${result.removed} removed`,
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("[VendorSync] Scheduled sync failed:", error.message);
+      });
   }, syncIntervalMs);
 });

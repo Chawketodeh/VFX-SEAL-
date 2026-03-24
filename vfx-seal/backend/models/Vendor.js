@@ -112,6 +112,7 @@ vendorSchema.index({
 vendorSchema.index({ badgeVOE: -1, globalScore: -1 }); // Sorting index
 vendorSchema.index({ createdAt: -1 }); // Recent vendors
 vendorSchema.index({ source: 1, country: 1, size: 1, badgeVOE: 1 });
+vendorSchema.index({ slug: 1, source: 1 }); // Slug lookup by source
 
 // Auto-generate slug from name before saving
 vendorSchema.pre("save", function (next) {

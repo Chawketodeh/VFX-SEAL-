@@ -220,7 +220,7 @@ exports.getVendorsFromOdoo = async (req, res) => {
 /**
  * GET /api/odoo/vendors/:slug
  *
- * Returns one vendor from Odoo feed by slug.
+ * Returns one vendor from Mongo cache by slug (indexed lookup).
  */
 exports.getVendorBySlugFromOdoo = async (req, res) => {
   try {
@@ -231,16 +231,15 @@ exports.getVendorBySlugFromOdoo = async (req, res) => {
 
     await ensureVendorCacheWarm();
 
-    const candidates = await Vendor.find({ source: "odoo" })
+    // Use indexed slug lookup - much faster than scanning all vendors
+    const vendor = await Vendor.findOne({
+      source: "odoo",
+      slug: { $regex: slug, $options: "i" },
+    })
       .select(
         "name slug logo country size foundedYear website shortDescription services badgeVOE globalScore odooId",
       )
       .lean();
-
-    const vendor = candidates.find(
-      (item) =>
-        normalizeSlug(item.slug) === slug || normalizeSlug(item.name) === slug,
-    );
 
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
