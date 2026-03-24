@@ -17,6 +17,7 @@ const contactRoutes = require("./routes/contact");
 const auditRequestRoutes = require("./routes/auditRequests");
 const odooRoutes = require("./routes/vendor.route");
 const favoriteRoutes = require("./routes/favorites");
+const { syncVendorsFromOdoo } = require("./services/vendorSyncService");
 
 const app = express();
 const server = http.createServer(app);
@@ -137,4 +138,18 @@ server.listen(PORT, () => {
   console.log(`🚀 VFX Seal API running on port ${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   Socket.io: enabled`);
+
+  // Warm Odoo vendor cache in background so user requests read from Mongo quickly.
+  syncVendorsFromOdoo({ bypassOdooCache: true }).catch((error) => {
+    console.error("[VendorSync] Startup sync failed:", error.message);
+  });
+
+  const syncIntervalMs = Number(
+    process.env.VENDOR_SYNC_INTERVAL_MS || 15 * 60 * 1000,
+  );
+  setInterval(() => {
+    syncVendorsFromOdoo({ bypassOdooCache: true }).catch((error) => {
+      console.error("[VendorSync] Scheduled sync failed:", error.message);
+    });
+  }, syncIntervalMs);
 });

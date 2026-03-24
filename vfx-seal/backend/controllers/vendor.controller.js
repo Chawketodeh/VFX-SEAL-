@@ -8,8 +8,13 @@
  * so the frontend hook (useVendors) doesn't need to change its call contract.
  */
 
-const { getVendors } = require("../services/odooService");
+const Vendor = require("../models/Vendor");
 const User = require("../models/User");
+const {
+  ensureVendorCacheWarm,
+  getCacheState,
+  syncVendorsFromOdoo,
+} = require("../services/vendorSyncService");
 
 const normalizeSlug = (value) =>
   String(value || "")
@@ -28,6 +33,36 @@ const normalizeSlug = (value) =>
  * Returns vendor data fetched live from Odoo with server-side filtering/pagination.
  * Response shape matches the existing MongoDB vendor endpoint so useVendors works unchanged.
  */
+const toClientVendor = (vendor) => {
+  const odooId = Number(vendor?.odooId);
+  return {
+    ...vendor,
+    _id: Number.isFinite(odooId) ? `odoo_${odooId}` : String(vendor?._id),
+  };
+};
+
+const parseFavoriteIds = (favoriteVendors) => {
+  const odooIds = [];
+  const mongoIds = [];
+
+  (favoriteVendors || []).forEach((rawId) => {
+    const value = String(rawId || "").trim();
+    if (!value) return;
+
+    if (value.startsWith("odoo_")) {
+      const parsed = Number(value.slice(5));
+      if (Number.isFinite(parsed)) {
+        odooIds.push(parsed);
+      }
+      return;
+    }
+
+    mongoIds.push(value);
+  });
+
+  return { odooIds, mongoIds };
+};
+
 exports.getVendorsFromOdoo = async (req, res) => {
   try {
     const {
@@ -38,31 +73,37 @@ exports.getVendorsFromOdoo = async (req, res) => {
       page = 1,
       limit = 20,
       filtersOnly,
-      noCache,
       favoriteOnly,
     } = req.query;
 
-    // --- 1. Fetch all vendors from Odoo (live, no DB cache) ---
-    const allVendors = await getVendors({
-      bypassCache: String(noCache).toLowerCase() === "true",
-    });
+    await ensureVendorCacheWarm();
 
-    // --- 2. Derive filter options from the actual fetched data ---
+    const filterPipeline = [
+      { $match: { source: "odoo" } },
+      {
+        $project: {
+          country: 1,
+          size: 1,
+          badgeVOE: 1,
+          services: 1,
+        },
+      },
+    ];
+
+    const allForFilters = await Vendor.aggregate(filterPipeline);
+
     const countries = [
-      ...new Set(allVendors.map((v) => v.country).filter(Boolean)),
+      ...new Set(allForFilters.map((v) => v.country).filter(Boolean)),
     ].sort();
-
     const sizes = [
-      ...new Set(allVendors.map((v) => v.size).filter(Boolean)),
+      ...new Set(allForFilters.map((v) => v.size).filter(Boolean)),
     ].sort();
-
     const badges = [
-      ...new Set(allVendors.map((v) => v.badgeVOE).filter(Boolean)),
+      ...new Set(allForFilters.map((v) => v.badgeVOE).filter(Boolean)),
     ].sort();
-
     const services = [
       ...new Set(
-        allVendors
+        allForFilters
           .flatMap((v) => (Array.isArray(v.services) ? v.services : []))
           .filter(Boolean),
       ),
@@ -75,52 +116,89 @@ exports.getVendorsFromOdoo = async (req, res) => {
       return res.json({ filters });
     }
 
-    // --- 3. Apply optional search / filter params ---
-    let filtered = allVendors;
+    const mongoFilter = { source: "odoo" };
+    const andConditions = [];
 
     if (String(favoriteOnly).toLowerCase() === "true") {
       const user = await User.findById(req.user._id).select("favoriteVendors");
-      const favoriteIds = new Set(user?.favoriteVendors || []);
-      filtered = filtered.filter((vendor) => favoriteIds.has(vendor._id));
+      const { odooIds, mongoIds } = parseFavoriteIds(
+        user?.favoriteVendors || [],
+      );
+
+      if (odooIds.length === 0 && mongoIds.length === 0) {
+        return res.json({
+          vendors: [],
+          total: 0,
+          page: 1,
+          totalPages: 1,
+          filters,
+        });
+      }
+
+      const favoriteConditions = [];
+      if (odooIds.length > 0)
+        favoriteConditions.push({ odooId: { $in: odooIds } });
+      if (mongoIds.length > 0)
+        favoriteConditions.push({ _id: { $in: mongoIds } });
+      andConditions.push({ $or: favoriteConditions });
     }
 
     if (search && search.trim()) {
-      const q = search.toLowerCase().trim();
-      filtered = filtered.filter(
-        (v) =>
-          v.name.toLowerCase().includes(q) ||
-          v.country.toLowerCase().includes(q) ||
-          (v.shortDescription &&
-            v.shortDescription.toLowerCase().includes(q)) ||
-          v.services.some((s) => s.toLowerCase().includes(q)),
-      );
+      andConditions.push({
+        $or: [
+          { name: { $regex: search.trim(), $options: "i" } },
+          { country: { $regex: search.trim(), $options: "i" } },
+          { shortDescription: { $regex: search.trim(), $options: "i" } },
+          {
+            services: { $elemMatch: { $regex: search.trim(), $options: "i" } },
+          },
+        ],
+      });
     }
 
     if (country) {
-      const countryFilter = country
-        .split(",")
-        .map((c) => c.toLowerCase().trim());
-      filtered = filtered.filter((v) =>
-        countryFilter.includes((v.country || "").toLowerCase()),
-      );
+      mongoFilter.country = {
+        $in: country
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      };
     }
 
     if (size) {
-      const sizeFilter = size.split(",").map((s) => s.trim());
-      filtered = filtered.filter((v) => sizeFilter.includes(v.size));
+      mongoFilter.size = {
+        $in: size
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
     }
 
     if (badge) {
-      const badgeFilter = badge.split(",").map((b) => b.trim());
-      filtered = filtered.filter((v) => badgeFilter.includes(v.badgeVOE));
+      mongoFilter.badgeVOE = {
+        $in: badge
+          .split(",")
+          .map((b) => b.trim())
+          .filter(Boolean),
+      };
     }
 
-    // --- 4. Paginate ---
-    const total = filtered.length;
+    if (andConditions.length > 0) {
+      mongoFilter.$and = andConditions;
+    }
+
+    const total = await Vendor.countDocuments(mongoFilter);
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
-    const vendors = filtered.slice(skip, skip + limitNum);
+
+    const vendorsFromDb = await Vendor.find(mongoFilter)
+      .sort({ badgeVOE: -1, globalScore: -1, name: 1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const vendors = vendorsFromDb.map(toClientVendor);
 
     return res.json({
       vendors,
@@ -151,21 +229,49 @@ exports.getVendorBySlugFromOdoo = async (req, res) => {
       return res.status(400).json({ message: "Invalid vendor slug" });
     }
 
-    const allVendors = await getVendors();
-    const vendor =
-      allVendors.find((item) => normalizeSlug(item.slug) === slug) ||
-      allVendors.find((item) => normalizeSlug(item.name) === slug);
+    await ensureVendorCacheWarm();
+
+    const candidates = await Vendor.find({ source: "odoo" })
+      .select(
+        "name slug logo country size foundedYear website shortDescription services badgeVOE globalScore odooId",
+      )
+      .lean();
+
+    const vendor = candidates.find(
+      (item) =>
+        normalizeSlug(item.slug) === slug || normalizeSlug(item.name) === slug,
+    );
 
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
-    return res.json({ vendor });
+    return res.json({ vendor: toClientVendor(vendor) });
   } catch (error) {
     console.error("[Odoo] getVendorBySlugFromOdoo failed:", error.message);
     return res.status(503).json({
       success: false,
       message: "Vendor service temporarily unavailable",
+    });
+  }
+};
+
+exports.syncVendorsCache = async (req, res) => {
+  try {
+    const result = await syncVendorsFromOdoo({ bypassOdooCache: true });
+    const cacheState = await getCacheState();
+
+    return res.json({
+      message: "Vendor cache sync completed",
+      result,
+      cacheState,
+    });
+  } catch (error) {
+    console.error("[VendorSync] Manual sync failed:", error.message);
+    return res.status(503).json({
+      success: false,
+      message: "Vendor sync failed",
+      error: error.message,
     });
   }
 };

@@ -79,6 +79,23 @@ const vendorSchema = new mongoose.Schema(
         default: "private",
       },
     },
+    source: {
+      type: String,
+      enum: ["local", "odoo"],
+      default: "local",
+      index: true,
+    },
+    odooId: {
+      type: Number,
+      sparse: true,
+      unique: true,
+      index: true,
+    },
+    lastSyncedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -94,6 +111,7 @@ vendorSchema.index({
 }); // Text search
 vendorSchema.index({ badgeVOE: -1, globalScore: -1 }); // Sorting index
 vendorSchema.index({ createdAt: -1 }); // Recent vendors
+vendorSchema.index({ source: 1, country: 1, size: 1, badgeVOE: 1 });
 
 // Auto-generate slug from name before saving
 vendorSchema.pre("save", function (next) {
