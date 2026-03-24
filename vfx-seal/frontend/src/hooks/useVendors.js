@@ -304,17 +304,9 @@ export const useVendors = () => {
 
         invalidateVendorCache();
 
-        // In My List mode, removal should stay instant without stale repaints.
-        if (activeFilters.favoriteOnly && currentlyFavorite) {
-          return;
-        }
-
-        // Keep server and client aligned after optimistic update.
-        fetchVendors({
-          ...fetchParams,
-          noCache: "true",
-          refreshTs: String(Date.now()),
-        });
+        // Don't refetch vendors list - the favorite state is already updated optimistically
+        // and the vendor cards will re-render with the new favorite status.
+        // Cache is invalidated for next real refetch from pagination/filter changes.
       } catch (error) {
         setFavoriteVendorIds(previousFavorites);
         setVendors(previousVendors);
@@ -330,8 +322,6 @@ export const useVendors = () => {
       activeFilters.favoriteOnly,
       favoriteActionLoadingIds,
       favoriteVendorIds,
-      fetchParams,
-      fetchVendors,
       invalidateVendorCache,
       pagination,
       vendors,
