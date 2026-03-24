@@ -11,10 +11,12 @@ import { useVendors } from "../hooks/useVendors";
 import {
   FiChevronLeft,
   FiChevronRight,
+  FiHeart,
   FiMapPin,
   FiSearch,
   FiStar,
 } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa";
 import badgeGold from "../assets/BADGE_VOE/Badges_01_VOE_transp.png";
 import badgeSilver from "../assets/BADGE_VOE/Badges_02_VOE_transp.png";
 import badgeCandidate from "../assets/BADGE_VOE/Badges_05_VOE_transp.png";
@@ -33,6 +35,8 @@ export default function VendorsPage() {
   const featuredRowRef = useRef(null);
   const {
     vendors,
+    favoriteVendorIds,
+    favoriteActionLoadingIds,
     feedbackSummaries,
     filters,
     loading,
@@ -43,6 +47,7 @@ export default function VendorsPage() {
     updateSearch,
     updateFilters,
     changePage,
+    toggleFavorite,
   } = useVendors();
 
   const handleSearchChange = (e) => {
@@ -65,9 +70,26 @@ export default function VendorsPage() {
   };
 
   const clearFilters = () => {
-    updateFilters({ country: [], size: [], badge: [] });
+    updateFilters({ country: [], size: [], badge: [], favoriteOnly: false });
     updateSearch("");
   };
+
+  const handleFavoriteClick = async (event, vendorId) => {
+    event.stopPropagation();
+
+    if (favoriteActionLoadingIds.includes(vendorId)) return;
+
+    try {
+      await toggleFavorite(vendorId);
+    } catch (error) {
+      alert(error.displayMessage || "Failed to update favorites");
+    }
+  };
+
+  const isFavoriteVendor = (vendorId) =>
+    favoriteVendorIds.includes(vendorId) ||
+    (activeFilters.favoriteOnly &&
+      vendors.some((vendor) => vendor._id === vendorId));
 
   const validationTierOptions = [
     { key: "self", label: "Self-assessed", badges: ["Candidate"] },
@@ -342,6 +364,22 @@ export default function VendorsPage() {
                     </div>
                   </form>
 
+                  <div className="filter-group">
+                    <div className="filter-group-title">My Vendors</div>
+                    <div
+                      className={`filter-option ${activeFilters.favoriteOnly ? "active" : ""}`}
+                      onClick={() =>
+                        updateFilters({
+                          ...activeFilters,
+                          favoriteOnly: !activeFilters.favoriteOnly,
+                        })
+                      }
+                    >
+                      <span className="filter-checkbox" />
+                      My List
+                    </div>
+                  </div>
+
                   {filters.countries && filters.countries.length > 0 && (
                     <div className="filter-group">
                       <div className="filter-group-title">Country</div>
@@ -403,8 +441,20 @@ export default function VendorsPage() {
                   <div className="empty-state-icon">
                     <FiSearch size={48} />
                   </div>
-                  <h3>No vendors found</h3>
-                  <p>Try adjusting your search or filters.</p>
+                  {activeFilters.favoriteOnly ? (
+                    <>
+                      <h3>No saved vendors yet</h3>
+                      <p>
+                        Save vendors with the heart icon, then enable My List to
+                        find them quickly.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3>No vendors found</h3>
+                      <p>Try adjusting your search or filters.</p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <>
@@ -431,6 +481,10 @@ export default function VendorsPage() {
                           const badgeType = getBadgeType(vendor);
                           const tierLabel = getValidationTier(badgeType);
                           const sponsored = isSponsoredVendor(vendor);
+                          const isFavorite = isFavoriteVendor(vendor._id);
+                          const isPending = favoriteActionLoadingIds.includes(
+                            vendor._id,
+                          );
                           return (
                             <div
                               className={`netflix-card marketplace-card is-featured ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
@@ -462,6 +516,27 @@ export default function VendorsPage() {
                                   </div>
                                 )}
                                 <div className="netflix-card-overlay">
+                                  <div className="vendor-card-actions">
+                                    <button
+                                      type="button"
+                                      className={`favorite-action ${isFavorite ? "active" : ""} ${isPending ? "is-loading" : ""}`}
+                                      aria-label={
+                                        isFavorite
+                                          ? "Remove from my list"
+                                          : "Save to my list"
+                                      }
+                                      disabled={isPending}
+                                      onClick={(event) =>
+                                        handleFavoriteClick(event, vendor._id)
+                                      }
+                                    >
+                                      {isFavorite ? (
+                                        <FaHeart size={14} />
+                                      ) : (
+                                        <FiHeart size={14} />
+                                      )}
+                                    </button>
+                                  </div>
                                   <span
                                     className={`voe-badge ${badgeClass(badgeType)}`}
                                   >
@@ -553,6 +628,10 @@ export default function VendorsPage() {
                       const badgeType = getBadgeType(vendor);
                       const tierLabel = getValidationTier(badgeType);
                       const sponsored = isSponsoredVendor(vendor);
+                      const isFavorite = isFavoriteVendor(vendor._id);
+                      const isPending = favoriteActionLoadingIds.includes(
+                        vendor._id,
+                      );
                       return (
                         <div
                           className={`netflix-card marketplace-card slide-up ${isVOEAuditedBadge(badgeType) ? "is-audited" : "is-regular"}`}
@@ -588,6 +667,27 @@ export default function VendorsPage() {
                               </div>
                             )}
                             <div className="netflix-card-overlay">
+                              <div className="vendor-card-actions">
+                                <button
+                                  type="button"
+                                  className={`favorite-action ${isFavorite ? "active" : ""} ${isPending ? "is-loading" : ""}`}
+                                  aria-label={
+                                    isFavorite
+                                      ? "Remove from my list"
+                                      : "Save to my list"
+                                  }
+                                  disabled={isPending}
+                                  onClick={(event) =>
+                                    handleFavoriteClick(event, vendor._id)
+                                  }
+                                >
+                                  {isFavorite ? (
+                                    <FaHeart size={14} />
+                                  ) : (
+                                    <FiHeart size={14} />
+                                  )}
+                                </button>
+                              </div>
                               <span
                                 className={`voe-badge ${badgeClass(badgeType)}`}
                               >

@@ -22,6 +22,26 @@ export const useDebounce = (value, delay) => {
 const cache = new Map();
 const inFlightRequests = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const VENDOR_FILTERS_STORAGE_KEY = "vfxseal_vendors_active_filters";
+
+const getSavedActiveFilters = () => {
+  try {
+    const raw = localStorage.getItem(VENDOR_FILTERS_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    return {
+      country: Array.isArray(parsed.country) ? parsed.country : [],
+      size: Array.isArray(parsed.size) ? parsed.size : [],
+      badge: Array.isArray(parsed.badge) ? parsed.badge : [],
+      favoriteOnly: Boolean(parsed.favoriteOnly),
+    };
+  } catch {
+    return null;
+  }
+};
 
 const getCacheKey = (url, params) => {
   const searchParams = new URLSearchParams(params);
@@ -35,6 +55,8 @@ const isExpired = (timestamp) => {
 // Enhanced vendors hook with caching and optimization
 export const useVendors = () => {
   const [vendors, setVendors] = useState([]);
+  const [favoriteVendorIds, setFavoriteVendorIds] = useState([]);
+  const [favoriteActionLoadingIds, setFavoriteActionLoadingIds] = useState([]);
   const [feedbackSummaries, setFeedbackSummaries] = useState({});
   const [filters, setFilters] = useState({
     countries: [],
@@ -45,11 +67,15 @@ export const useVendors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilters, setActiveFilters] = useState({
-    country: [],
-    size: [],
-    badge: [],
-  });
+  const [activeFilters, setActiveFilters] = useState(
+    () =>
+      getSavedActiveFilters() || {
+        country: [],
+        size: [],
+        badge: [],
+        favoriteOnly: false,
+      },
+  );
   const [pagination, setPagination] = useState({
     page: 1,
     totalPages: 1,
@@ -67,10 +93,23 @@ export const useVendors = () => {
       country: activeFilters.country.join(","),
       size: activeFilters.size.join(","),
       badge: activeFilters.badge.join(","),
+      favoriteOnly: activeFilters.favoriteOnly ? "true" : "",
       page: pagination.page,
     }),
     [debouncedSearchTerm, activeFilters, pagination.page],
   );
+
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const { data } = await api.get("/favorites/vendors");
+      setFavoriteVendorIds(
+        Array.isArray(data?.favorites) ? data.favorites : [],
+      );
+    } catch (error) {
+      console.error("Failed to load favorites:", error);
+      setFavoriteVendorIds([]);
+    }
+  }, []);
 
   // Fetch vendors with caching
   const fetchVendors = useCallback(
@@ -175,6 +214,17 @@ export const useVendors = () => {
     fetchVendors();
   }, [fetchVendors]);
 
+  useEffect(() => {
+    localStorage.setItem(
+      VENDOR_FILTERS_STORAGE_KEY,
+      JSON.stringify(activeFilters),
+    );
+  }, [activeFilters]);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
+
   // Fetch feedback summaries when vendors change
   useEffect(() => {
     if (vendors.length > 0) {
@@ -205,8 +255,93 @@ export const useVendors = () => {
     cache.clear();
   }, []);
 
+  const invalidateVendorCache = useCallback(() => {
+    for (const key of cache.keys()) {
+      if (key.startsWith("/odoo/vendors?")) {
+        cache.delete(key);
+      }
+    }
+  }, []);
+
+  const toggleFavorite = useCallback(
+    async (vendorId) => {
+      if (!vendorId) return;
+
+      if (favoriteActionLoadingIds.includes(vendorId)) return;
+
+      setFavoriteActionLoadingIds((prev) => [...prev, vendorId]);
+
+      const currentlyFavorite =
+        favoriteVendorIds.includes(vendorId) ||
+        (activeFilters.favoriteOnly &&
+          vendors.some((vendor) => vendor._id === vendorId));
+      const previousFavorites = favoriteVendorIds;
+      const previousVendors = vendors;
+      const previousPagination = pagination;
+      const nextFavorites = currentlyFavorite
+        ? previousFavorites.filter((id) => id !== vendorId)
+        : [...previousFavorites, vendorId];
+
+      setFavoriteVendorIds(nextFavorites);
+
+      // Instant UX in "My List" mode: remove card immediately when unfavorited.
+      if (activeFilters.favoriteOnly && currentlyFavorite) {
+        setVendors((prev) => prev.filter((vendor) => vendor._id !== vendorId));
+        setPagination((prev) => ({
+          ...prev,
+          total: Math.max(0, (prev.total || 0) - 1),
+        }));
+      }
+
+      try {
+        if (currentlyFavorite) {
+          await api.delete(
+            `/favorites/vendors/${encodeURIComponent(vendorId)}`,
+          );
+        } else {
+          await api.post(`/favorites/vendors/${encodeURIComponent(vendorId)}`);
+        }
+
+        invalidateVendorCache();
+
+        // In My List mode, removal should stay instant without stale repaints.
+        if (activeFilters.favoriteOnly && currentlyFavorite) {
+          return;
+        }
+
+        // Keep server and client aligned after optimistic update.
+        fetchVendors({
+          ...fetchParams,
+          noCache: "true",
+          refreshTs: String(Date.now()),
+        });
+      } catch (error) {
+        setFavoriteVendorIds(previousFavorites);
+        setVendors(previousVendors);
+        setPagination(previousPagination);
+        throw error;
+      } finally {
+        setFavoriteActionLoadingIds((prev) =>
+          prev.filter((id) => id !== vendorId),
+        );
+      }
+    },
+    [
+      activeFilters.favoriteOnly,
+      favoriteActionLoadingIds,
+      favoriteVendorIds,
+      fetchParams,
+      fetchVendors,
+      invalidateVendorCache,
+      pagination,
+      vendors,
+    ],
+  );
+
   return {
     vendors,
+    favoriteVendorIds,
+    favoriteActionLoadingIds,
     feedbackSummaries,
     filters,
     loading,
@@ -218,6 +353,8 @@ export const useVendors = () => {
     updateFilters,
     changePage,
     clearCache,
+    toggleFavorite,
+    refetchFavorites: fetchFavorites,
     refetch: () => fetchVendors(fetchParams),
   };
 };

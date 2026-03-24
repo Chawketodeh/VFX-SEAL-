@@ -16,6 +16,7 @@ const notificationRoutes = require("./routes/notifications");
 const contactRoutes = require("./routes/contact");
 const auditRequestRoutes = require("./routes/auditRequests");
 const odooRoutes = require("./routes/vendor.route");
+const favoriteRoutes = require("./routes/favorites");
 
 const app = express();
 const server = http.createServer(app);
@@ -118,6 +119,7 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/audit-requests", auditRequestRoutes);
+app.use("/api/favorites", favoriteRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

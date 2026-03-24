@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema(
       enum: ["PENDING", "APPROVED", "REJECTED"],
       default: "PENDING",
     },
+    favoriteVendors: {
+      type: [String],
+      default: [],
+    },
     // Password reset fields
     resetPasswordToken: {
       type: String,

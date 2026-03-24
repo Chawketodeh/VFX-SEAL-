@@ -9,6 +9,7 @@
  */
 
 const { getVendors } = require("../services/odooService");
+const User = require("../models/User");
 
 const normalizeSlug = (value) =>
   String(value || "")
@@ -38,6 +39,7 @@ exports.getVendorsFromOdoo = async (req, res) => {
       limit = 20,
       filtersOnly,
       noCache,
+      favoriteOnly,
     } = req.query;
 
     // --- 1. Fetch all vendors from Odoo (live, no DB cache) ---
@@ -75,6 +77,12 @@ exports.getVendorsFromOdoo = async (req, res) => {
 
     // --- 3. Apply optional search / filter params ---
     let filtered = allVendors;
+
+    if (String(favoriteOnly).toLowerCase() === "true") {
+      const user = await User.findById(req.user._id).select("favoriteVendors");
+      const favoriteIds = new Set(user?.favoriteVendors || []);
+      filtered = filtered.filter((vendor) => favoriteIds.has(vendor._id));
+    }
 
     if (search && search.trim()) {
       const q = search.toLowerCase().trim();

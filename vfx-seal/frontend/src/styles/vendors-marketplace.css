@@ -1,5 +1,5 @@
 /* ============================================
-   NEW Ù?¤ Feedback Section
+   NEW ï¿½?ï¿½ Feedback Section
    ============================================ */
 .feedback-section {
   margin-bottom: var(--space-xl);
@@ -169,7 +169,7 @@
 }
 
 /* ============================================
-   NEW Ù?¤ Netflix-style Vendor Cards
+   NEW ï¿½?ï¿½ Netflix-style Vendor Cards
    ============================================ */
 .netflix-grid {
   display: grid;
@@ -262,6 +262,44 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
+}
+
+.vendor-card-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.favorite-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(7, 12, 20, 0.72);
+  color: #dbe4f0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.favorite-action:hover {
+  background: rgba(15, 23, 35, 0.92);
+  border-color: rgba(244, 211, 138, 0.72);
+  color: var(--accent);
+}
+
+.favorite-action.active {
+  background: rgba(244, 211, 138, 0.2);
+  border-color: rgba(244, 211, 138, 0.9);
+  color: #ffd986;
+  box-shadow: 0 0 16px rgba(221, 177, 98, 0.24);
+}
+
+.favorite-action.is-loading {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .netflix-card-body {
