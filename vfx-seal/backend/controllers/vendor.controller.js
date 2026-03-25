@@ -8,8 +8,15 @@
  * so the frontend hook (useVendors) doesn't need to change its call contract.
  */
 
-const Vendor = require("../models/Vendor");
-const User = require("../models/User");
+const { Op } = require("sequelize");
+const {
+  Vendor,
+  VendorService,
+  FavoriteVendor,
+  VendorAssessment,
+  AssessmentSkill,
+} = require("../models");
+const { toVendorIdentifier } = require("../utils/vendorIdentifier");
 const {
   ensureVendorCacheWarm,
   getCacheState,
@@ -34,16 +41,42 @@ const normalizeSlug = (value) =>
  * Response shape matches the existing MongoDB vendor endpoint so useVendors works unchanged.
  */
 const toClientVendor = (vendor) => {
-  const odooId = Number(vendor?.odooId);
+  const plain = vendor?.toJSON ? vendor.toJSON() : vendor;
+
   return {
-    ...vendor,
-    _id: Number.isFinite(odooId) ? `odoo_${odooId}` : String(vendor?._id),
+    ...plain,
+    _id: toVendorIdentifier(plain),
+    services: Array.isArray(plain.servicesList)
+      ? plain.servicesList.map((item) => item.serviceName)
+      : plain.services || [],
+    assessment: Array.isArray(plain.assessmentSections)
+      ? plain.assessmentSections.map((section) => {
+        const skills = Array.isArray(section.skills) ? section.skills : [];
+        return {
+          sectionName: section.sectionName,
+          score: section.score,
+          validatedSkills: skills
+            .filter((s) => s.skillType === "validated")
+            .map((s) => s.skillName),
+          unverifiedSkills: skills
+            .filter((s) => s.skillType === "unverified")
+            .map((s) => s.skillName),
+          nonValidatedSkills: skills
+            .filter((s) => s.skillType === "nonValidated")
+            .map((s) => s.skillName),
+        };
+      })
+      : [],
+    pdfReport: {
+      filePath: plain.pdfReportFilePath || "",
+      visibility: plain.pdfReportVisibility || "private",
+    },
   };
 };
 
 const parseFavoriteIds = (favoriteVendors) => {
   const odooIds = [];
-  const mongoIds = [];
+  const localIds = [];
 
   (favoriteVendors || []).forEach((rawId) => {
     const value = String(rawId || "").trim();
@@ -57,10 +90,15 @@ const parseFavoriteIds = (favoriteVendors) => {
       return;
     }
 
-    mongoIds.push(value);
+    if (value.startsWith("local_")) {
+      const parsed = Number(value.slice(6));
+      if (Number.isFinite(parsed)) {
+        localIds.push(parsed);
+      }
+    }
   });
 
-  return { odooIds, mongoIds };
+  return { odooIds, localIds };
 };
 
 exports.getVendorsFromOdoo = async (req, res) => {
@@ -78,19 +116,16 @@ exports.getVendorsFromOdoo = async (req, res) => {
 
     await ensureVendorCacheWarm();
 
-    const filterPipeline = [
-      { $match: { source: "odoo" } },
-      {
-        $project: {
-          country: 1,
-          size: 1,
-          badgeVOE: 1,
-          services: 1,
-        },
-      },
-    ];
-
-    const allForFilters = await Vendor.aggregate(filterPipeline);
+    const allForFilters = await Vendor.findAll({
+      where: { source: "odoo" },
+      include: [{
+        model: VendorService,
+        as: "servicesList",
+        attributes: ["serviceName"],
+      }],
+      attributes: ["country", "size", "badgeVOE"],
+      raw: false,
+    });
 
     const countries = [
       ...new Set(allForFilters.map((v) => v.country).filter(Boolean)),
@@ -104,7 +139,11 @@ exports.getVendorsFromOdoo = async (req, res) => {
     const services = [
       ...new Set(
         allForFilters
-          .flatMap((v) => (Array.isArray(v.services) ? v.services : []))
+          .flatMap((v) =>
+            Array.isArray(v.servicesList)
+              ? v.servicesList.map((item) => item.serviceName)
+              : [],
+          )
           .filter(Boolean),
       ),
     ].sort();
@@ -116,16 +155,20 @@ exports.getVendorsFromOdoo = async (req, res) => {
       return res.json({ filters });
     }
 
-    const mongoFilter = { source: "odoo" };
+    const where = { source: "odoo" };
     const andConditions = [];
 
     if (String(favoriteOnly).toLowerCase() === "true") {
-      const user = await User.findById(req.user._id).select("favoriteVendors");
-      const { odooIds, mongoIds } = parseFavoriteIds(
-        user?.favoriteVendors || [],
+      const favorites = await FavoriteVendor.findAll({
+        where: { userId: req.user.id },
+        attributes: ["vendorIdentifier"],
+        raw: true,
+      });
+      const { odooIds, localIds } = parseFavoriteIds(
+        favorites.map((item) => item.vendorIdentifier),
       );
 
-      if (odooIds.length === 0 && mongoIds.length === 0) {
+      if (odooIds.length === 0 && localIds.length === 0) {
         return res.json({
           vendors: [],
           total: 0,
@@ -136,29 +179,24 @@ exports.getVendorsFromOdoo = async (req, res) => {
       }
 
       const favoriteConditions = [];
-      if (odooIds.length > 0)
-        favoriteConditions.push({ odooId: { $in: odooIds } });
-      if (mongoIds.length > 0)
-        favoriteConditions.push({ _id: { $in: mongoIds } });
-      andConditions.push({ $or: favoriteConditions });
+      if (odooIds.length > 0) favoriteConditions.push({ odooId: { [Op.in]: odooIds } });
+      if (localIds.length > 0) favoriteConditions.push({ id: { [Op.in]: localIds } });
+      andConditions.push({ [Op.or]: favoriteConditions });
     }
 
     if (search && search.trim()) {
       andConditions.push({
-        $or: [
-          { name: { $regex: search.trim(), $options: "i" } },
-          { country: { $regex: search.trim(), $options: "i" } },
-          { shortDescription: { $regex: search.trim(), $options: "i" } },
-          {
-            services: { $elemMatch: { $regex: search.trim(), $options: "i" } },
-          },
+        [Op.or]: [
+          { name: { [Op.like]: `%${search.trim()}%` } },
+          { country: { [Op.like]: `%${search.trim()}%` } },
+          { shortDescription: { [Op.like]: `%${search.trim()}%` } },
         ],
       });
     }
 
     if (country) {
-      mongoFilter.country = {
-        $in: country
+      where.country = {
+        [Op.in]: country
           .split(",")
           .map((c) => c.trim())
           .filter(Boolean),
@@ -166,8 +204,8 @@ exports.getVendorsFromOdoo = async (req, res) => {
     }
 
     if (size) {
-      mongoFilter.size = {
-        $in: size
+      where.size = {
+        [Op.in]: size
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
@@ -175,8 +213,8 @@ exports.getVendorsFromOdoo = async (req, res) => {
     }
 
     if (badge) {
-      mongoFilter.badgeVOE = {
-        $in: badge
+      where.badgeVOE = {
+        [Op.in]: badge
           .split(",")
           .map((b) => b.trim())
           .filter(Boolean),
@@ -184,19 +222,45 @@ exports.getVendorsFromOdoo = async (req, res) => {
     }
 
     if (andConditions.length > 0) {
-      mongoFilter.$and = andConditions;
+      where[Op.and] = andConditions;
     }
 
-    const total = await Vendor.countDocuments(mongoFilter);
+    const total = await Vendor.count({ where });
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
 
-    const vendorsFromDb = await Vendor.find(mongoFilter)
-      .sort({ badgeVOE: -1, globalScore: -1, name: 1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
+    const vendorsFromDb = await Vendor.findAll({
+      where,
+      include: [
+        {
+          model: VendorService,
+          as: "servicesList",
+          attributes: ["serviceName"],
+          required: false,
+        },
+        {
+          model: VendorAssessment,
+          as: "assessmentSections",
+          required: false,
+          include: [
+            {
+              model: AssessmentSkill,
+              as: "skills",
+              attributes: ["skillName", "skillType"],
+              required: false,
+            },
+          ],
+        },
+      ],
+      order: [
+        ["badgeVOE", "DESC"],
+        ["globalScore", "DESC"],
+        ["name", "ASC"],
+      ],
+      offset: skip,
+      limit: limitNum,
+    });
 
     const vendors = vendorsFromDb.map(toClientVendor);
 
@@ -231,15 +295,20 @@ exports.getVendorBySlugFromOdoo = async (req, res) => {
 
     await ensureVendorCacheWarm();
 
-    // Use indexed slug lookup - much faster than scanning all vendors
     const vendor = await Vendor.findOne({
-      source: "odoo",
-      slug: { $regex: slug, $options: "i" },
-    })
-      .select(
-        "name slug logo country size foundedYear website shortDescription services badgeVOE globalScore odooId",
-      )
-      .lean();
+      where: {
+        source: "odoo",
+        slug: { [Op.like]: slug },
+      },
+      include: [
+        {
+          model: VendorService,
+          as: "servicesList",
+          attributes: ["serviceName"],
+          required: false,
+        },
+      ],
+    });
 
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });

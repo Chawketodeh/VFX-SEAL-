@@ -1,164 +1,159 @@
-const mongoose = require("mongoose");
+const { Op } = require("sequelize");
 
-const auditRequestSchema = new mongoose.Schema(
-  {
-    // Requester information
-    requesterId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Requester ID is required"],
+module.exports = (sequelize, DataTypes) => {
+  const AuditRequest = sequelize.define(
+    "AuditRequest",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      requesterId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      requesterName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      requesterCompany: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      requesterEmail: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      vendorId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      vendorName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      sectionName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      itemName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      itemType: {
+        type: DataTypes.ENUM("unverified", "nonvalidated"),
+        allowNull: false,
+      },
+      isAnonymous: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      message: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+        defaultValue: "",
+      },
+      status: {
+        type: DataTypes.ENUM("pending", "accepted", "completed", "rejected"),
+        allowNull: false,
+        defaultValue: "pending",
+      },
+      statusUpdatedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      statusUpdatedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      adminNotes: {
+        type: DataTypes.STRING(1000),
+        allowNull: false,
+        defaultValue: "",
+      },
+      emailSent: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      emailSentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
-    requesterName: {
-      type: String,
-      required: [true, "Requester name is required"],
+    {
+      indexes: [
+        { fields: ["requesterId", "createdAt"] },
+        { fields: ["vendorId", "createdAt"] },
+        { fields: ["status", "createdAt"] },
+        {
+          name: "duplicate_prevention_index",
+          fields: ["requesterId", "vendorId", "sectionName", "itemName"],
+        },
+      ],
     },
-    requesterCompany: {
-      type: String,
-      required: [true, "Requester company is required"],
-    },
-    requesterEmail: {
-      type: String,
-      required: [true, "Requester email is required"],
-    },
+  );
 
-    // Request details
-    vendorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
-      required: [true, "Vendor ID is required"],
-    },
-    vendorName: {
-      type: String,
-      required: [true, "Vendor name is required"],
-    },
-    sectionName: {
-      type: String,
-      required: [true, "Section name is required"],
-    },
-    itemName: {
-      type: String,
-      required: [true, "Item name is required"],
-    },
-    itemType: {
-      type: String,
-      enum: ["unverified", "nonvalidated"],
-      required: [true, "Item type is required"],
-    },
+  AuditRequest.checkDailyQuota = async function checkDailyQuota(
+    userId,
+    maxPerDay = 5,
+  ) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    // Visibility and message
-    isAnonymous: {
-      type: Boolean,
-      default: false,
-    },
-    message: {
-      type: String,
-      maxlength: [500, "Message cannot exceed 500 characters"],
-      trim: true,
-      default: "",
-    },
+    const count = await AuditRequest.count({
+      where: {
+        requesterId: userId,
+        createdAt: { [Op.gte]: startOfDay },
+      },
+    });
 
-    // Request status
-    status: {
-      type: String,
-      enum: ["pending", "accepted", "completed", "rejected"],
-      default: "pending",
-    },
-    statusUpdatedAt: {
-      type: Date,
-    },
-    statusUpdatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-
-    // Admin notes
-    adminNotes: {
-      type: String,
-      maxlength: [1000, "Admin notes cannot exceed 1000 characters"],
-      trim: true,
-      default: "",
-    },
-
-    // Notification tracking
-    emailSent: {
-      type: Boolean,
-      default: false,
-    },
-    emailSentAt: {
-      type: Date,
-    },
-  },
-  {
-    timestamps: true,
-  },
-);
-
-// Indexes for efficient querying
-auditRequestSchema.index({ requesterId: 1, createdAt: -1 });
-auditRequestSchema.index({ vendorId: 1, createdAt: -1 });
-auditRequestSchema.index({ status: 1, createdAt: -1 });
-auditRequestSchema.index(
-  {
-    requesterId: 1,
-    vendorId: 1,
-    sectionName: 1,
-    itemName: 1,
-  },
-  {
-    name: "duplicate_prevention_index",
-  },
-);
-
-// Static method to check user's daily request quota
-auditRequestSchema.statics.checkDailyQuota = async function (
-  userId,
-  maxPerDay = 5,
-) {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const count = await this.countDocuments({
-    requesterId: userId,
-    createdAt: { $gte: startOfDay },
-  });
-
-  return {
-    used: count,
-    remaining: Math.max(0, maxPerDay - count),
-    canRequest: count < maxPerDay,
+    return {
+      used: count,
+      remaining: Math.max(0, maxPerDay - count),
+      canRequest: count < maxPerDay,
+    };
   };
-};
 
-// Static method to check for recent duplicate requests (prevent spam)
-auditRequestSchema.statics.checkRecentDuplicate = async function (
-  userId,
-  vendorId,
-  sectionName,
-  itemName,
-  hoursBack = 24,
-) {
-  const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
+  AuditRequest.checkRecentDuplicate = async function checkRecentDuplicate(
+    userId,
+    vendorId,
+    sectionName,
+    itemName,
+    hoursBack = 24,
+  ) {
+    const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
 
-  const existingRequest = await this.findOne({
-    requesterId: userId,
-    vendorId: vendorId,
-    sectionName: sectionName,
-    itemName: itemName,
-    createdAt: { $gte: cutoffTime },
-  });
+    const existing = await AuditRequest.findOne({
+      where: {
+        requesterId: userId,
+        vendorId,
+        sectionName,
+        itemName,
+        createdAt: { [Op.gte]: cutoffTime },
+      },
+    });
 
-  return existingRequest !== null;
-};
-
-// Method to get human-readable status
-auditRequestSchema.methods.getStatusDisplay = function () {
-  const statusMap = {
-    pending: "Pending Review",
-    accepted: "Accepted - In Progress",
-    completed: "Completed",
-    rejected: "Declined",
+    return Boolean(existing);
   };
-  return statusMap[this.status] || this.status;
-};
 
-module.exports = mongoose.model("AuditRequest", auditRequestSchema);
+  AuditRequest.prototype.getStatusDisplay = function getStatusDisplay() {
+    const statusMap = {
+      pending: "Pending Review",
+      accepted: "Accepted - In Progress",
+      completed: "Completed",
+      rejected: "Declined",
+    };
+    return statusMap[this.status] || this.status;
+  };
+
+  AuditRequest.prototype.toJSON = function toJSON() {
+    const data = { ...this.get() };
+    data._id = String(data.id);
+    return data;
+  };
+
+  return AuditRequest;
+};

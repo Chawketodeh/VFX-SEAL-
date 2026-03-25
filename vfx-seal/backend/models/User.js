@@ -1,94 +1,90 @@
-const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define(
+    "User",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      company: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: { isEmail: true },
+      },
+      passwordHash: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      country: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      roleInCompany: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      linkedin: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "",
+      },
+      role: {
+        type: DataTypes.ENUM("STUDIO", "ADMIN"),
+        allowNull: false,
+        defaultValue: "STUDIO",
+      },
+      status: {
+        type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED"),
+        allowNull: false,
+        defaultValue: "PENDING",
+      },
+      resetPasswordToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      resetPasswordExpires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
-    company: {
-      type: String,
-      required: [true, "Company is required"],
-      trim: true,
+    {
+      indexes: [{ unique: true, fields: ["email"] }],
+      hooks: {
+        beforeSave: async (user) => {
+          if (!user.changed("passwordHash")) return;
+          const salt = await bcrypt.genSalt(12);
+          user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
+        },
+      },
     },
-    email: {
-      type: String,
-      required: [true, "Email is required"],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
-    },
-    passwordHash: {
-      type: String,
-      required: true,
-    },
-    country: {
-      type: String,
-      required: [true, "Country is required"],
-      trim: true,
-    },
-    roleInCompany: {
-      type: String,
-      required: [true, "Role in company is required"],
-      trim: true,
-    },
-    linkedin: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-    role: {
-      type: String,
-      enum: ["STUDIO", "ADMIN"],
-      default: "STUDIO",
-    },
-    status: {
-      type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED"],
-      default: "PENDING",
-    },
-    favoriteVendors: {
-      type: [String],
-      default: [],
-    },
-    // Password reset fields
-    resetPasswordToken: {
-      type: String,
-      default: null,
-    },
-    resetPasswordExpires: {
-      type: Date,
-      default: null,
-    },
-  },
-  {
-    timestamps: true,
-  },
-);
+  );
 
-// 🔹 Hash password before saving (CORRECTED)
-userSchema.pre("save", async function () {
-  if (!this.isModified("passwordHash")) return;
-  const salt = await bcrypt.genSalt(12);
-  this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-});
+  User.prototype.comparePassword = async function comparePassword(
+    candidatePassword,
+  ) {
+    return bcrypt.compare(candidatePassword, this.passwordHash);
+  };
 
-// Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.passwordHash);
+  User.prototype.toJSON = function toJSON() {
+    const obj = { ...this.get() };
+    obj._id = String(obj.id);
+    delete obj.passwordHash;
+    delete obj.resetPasswordToken;
+    delete obj.resetPasswordExpires;
+    return obj;
+  };
+
+  return User;
 };
-
-// Remove sensitive fields from JSON output
-userSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.passwordHash;
-  delete obj.resetPasswordToken;
-  delete obj.resetPasswordExpires;
-  delete obj.__v;
-  return obj;
-};
-
-module.exports = mongoose.model("User", userSchema);
